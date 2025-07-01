@@ -17,8 +17,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Redis configuration
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+redis_client = redis.from_url(redis_url)
 
 class RateLimitMiddleware:
     """Rate limiting middleware"""
