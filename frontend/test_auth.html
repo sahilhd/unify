@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniLLM Auth Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; }
+        .error { border-color: #dc3545; background: #f8d7da; }
+        .success { border-color: #28a745; background: #d4edda; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>UniLLM Authentication Test</h1>
+        
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="test@example.com">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="testpass123">
+        </div>
+        
+        <button onclick="login()">Login</button>
+        <button onclick="testAuth()">Test Auth</button>
+        <button onclick="testChat()">Test Chat</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let apiKey = localStorage.getItem('unillm_api_key');
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    apiKey = data.user.api_key;
+                    localStorage.setItem('unillm_api_key', apiKey);
+                    showResult('Login successful! API Key: ' + apiKey, 'success');
+                } else {
+                    showResult('Login failed: ' + data.detail, 'error');
+                }
+            } catch (error) {
+                showResult('Login error: ' + error.message, 'error');
+            }
+        }
+
+        async function testAuth() {
+            if (!apiKey) {
+                showResult('No API key found. Please login first.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('Auth test successful! User: ' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult('Auth test failed: ' + data.detail, 'error');
+                }
+            } catch (error) {
+                showResult('Auth test error: ' + error.message, 'error');
+            }
+        }
+
+        async function testChat() {
+            if (!apiKey) {
+                showResult('No API key found. Please login first.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-3.5-turbo',
+                        messages: [{ role: 'user', content: 'Hello, how are you?' }],
+                        temperature: 0.7,
+                        max_tokens: 100,
+                    }),
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('Chat test successful! Response: ' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult('Chat test failed: ' + data.detail, 'error');
+                }
+            } catch (error) {
+                showResult('Chat test error: ' + error.message, 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+
+        // Check if we have an API key on load
+        if (apiKey) {
+            showResult('Found existing API key: ' + apiKey, 'success');
+        }
+    </script>
+</body>
+</html> 
