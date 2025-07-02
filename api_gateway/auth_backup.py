@@ -84,25 +84,20 @@ def get_current_user_api_key(
     if api_key.startswith("Bearer "):
         api_key = api_key[7:]
     
-    # Hardcoded API key for testing
-    if api_key == "unillm_hSsZq5Yb9j9ph2g40Gb3Qx2pGIkfcBJz":
-        # Create a mock user for testing
-        from database import User
-        from datetime import datetime
-        mock_user = User(
-            id="test_user_id",
-            email="test@example.com",
-            password_hash="mock_hash",
-            api_key="unillm_hSsZq5Yb9j9ph2g40Gb3Qx2pGIkfcBJz",
-            credits=1000.0,
-            rate_limit_per_minute=100,
-            daily_quota=1000,
-            is_active=True,
-            is_admin=False,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
-        )
-        return mock_user
+    # Mock authentication for testing
+    if api_key == "YOUR_API_KEY_HERE":  # Replace with actual API key for testing
+        return {
+            "user_id": "test_user_123",
+            "email": "test@example.com",
+            "api_key": "YOUR_API_KEY_HERE",  # Replace with actual API key for testing
+            "credits": 100.0,
+            "rate_limit_per_minute": 60,
+            "daily_quota": 10000,
+            "is_active": True,
+            "is_admin": False,
+            "created_at": "2024-01-01T00:00:00Z",
+            "updated_at": "2024-01-01T00:00:00Z"
+        }
     
     user = get_user_by_api_key(db, api_key)
     if not user:

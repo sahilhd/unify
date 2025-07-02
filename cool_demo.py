@@ -17,8 +17,9 @@ import json
 from typing import List, Dict
 
 # Initialize UniLLM client
-API_KEY = "unillm_hSsZq5Yb9j9ph2g40Gb3Qx2pGIkfcBJz"
-BASE_URL = "https://web-production-70deb.up.railway.app"
+# Set your API key and base URL here
+API_KEY = "YOUR_API_KEY_HERE"  # Replace with your actual API key
+BASE_URL = "https://web-production-70deb.up.railway.app"  # Your deployed backend URL
 
 client = unillm.UniLLM(
     api_key=API_KEY,
