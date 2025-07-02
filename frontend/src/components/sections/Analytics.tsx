@@ -36,8 +36,6 @@ export const useUsageStats = () => {
 };
 
 const Analytics: React.FC = () => {
-  const { user } = useAuth();
-  const { refreshUsageStats } = useUsageStats();
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(true);
 

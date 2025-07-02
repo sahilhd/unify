@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import { API_BASE_URL } from '../utils/config';
-import Analytics, { useUsageStats, UsageStatsContext } from './sections/Analytics';
+import Analytics, { UsageStatsContext } from './sections/Analytics';
 import Chat from './sections/Chat';
 import ApiKeys from './sections/ApiKeys';
 import Billing from './sections/Billing';
@@ -31,7 +31,6 @@ const Dashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -40,9 +39,6 @@ const Dashboard: React.FC = () => {
 
   // Create UsageStatsProvider component
   const UsageStatsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [usageStats, setUsageStats] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-
     const fetchUsageStats = async () => {
       try {
         const apiKey = localStorage.getItem('unillm_api_key');
@@ -55,12 +51,10 @@ const Dashboard: React.FC = () => {
 
         if (response.ok) {
           const data = await response.json();
-          setUsageStats(data);
+          // Handle usage stats data if needed
         }
       } catch (error) {
         console.error('Error fetching usage stats:', error);
-      } finally {
-        setLoading(false);
       }
     };
 

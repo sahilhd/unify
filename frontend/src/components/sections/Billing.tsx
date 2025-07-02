@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
-  CreditCardIcon,
   PlusIcon,
-  CurrencyDollarIcon,
-  ClockIcon
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 
 const Billing: React.FC = () => {
