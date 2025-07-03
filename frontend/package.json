@@ -26,8 +26,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "serve -s build -l $PORT",
+    "start": "echo 'PWD:' && pwd && echo 'ENV:' && printenv && serve -s build -l $PORT",
     "build": "CI=false react-scripts build",
+    "postbuild": "echo '--- BUILD DIR CONTENTS ---' && ls -l build && echo '--- ROOT DIR CONTENTS ---' && ls -l",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
