@@ -13,7 +13,8 @@
   "environments": {
     "production": {
       "variables": {
-        "CI": "false"
+        "CI": "false",
+        "REACT_APP_API_BASE_URL": "https://web-production-70deb.up.railway.app"
       }
     }
   }
