@@ -107,12 +107,21 @@ def handle_http_error(
             response_data=response_data,
         )
     elif status_code >= 500:
-        return ServerError(
-            f"Server error: {error_message}",
-            provider=provider,
-            status_code=status_code,
-            response_data=response_data,
-        )
+        # Check for specific overload messages
+        if "overloaded" in error_message.lower():
+            return ServerError(
+                f"Anthropic servers are temporarily overloaded. Please try again in a few moments. Error: {error_message}",
+                provider=provider,
+                status_code=status_code,
+                response_data=response_data,
+            )
+        else:
+            return ServerError(
+                f"Server error: {error_message}",
+                provider=provider,
+                status_code=status_code,
+                response_data=response_data,
+            )
     else:
         return UniLLMError(
             f"HTTP {status_code}: {error_message}",

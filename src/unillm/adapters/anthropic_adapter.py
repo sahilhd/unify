@@ -3,16 +3,22 @@ Anthropic adapter for UniLLM library.
 """
 
 import json
+import requests
+import time
 from datetime import datetime
 from typing import Any, Dict, Generator, List, Optional
 
-import requests
-
 from .base import BaseAdapter
 from ..exceptions import (
-    handle_http_error,
-    TimeoutError,
+    AuthenticationError,
+    InvalidRequestError,
+    ModelNotFoundError,
     NetworkError,
+    QuotaExceededError,
+    RateLimitError,
+    ServerError,
+    TimeoutError,
+    handle_http_error,
 )
 from ..models import ChatMessage, ChatRequest, ChatResponse, TokenUsage
 
@@ -26,6 +32,49 @@ class AnthropicAdapter(BaseAdapter):
         self.base_url = base_url or "https://api.anthropic.com/v1"
         # DEBUG: Print when adapter is created
         print(f"[AnthropicAdapter DEBUG] Adapter created with API key: {repr(api_key)}")
+    
+    def _make_request_with_retry(self, url: str, headers: Dict[str, str], payload: Dict[str, Any], max_retries: int = 3) -> requests.Response:
+        """Make a request with exponential backoff retry logic for server overloads."""
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=self.timeout,
+                )
+                
+                # If successful, return immediately
+                if response.status_code == 200:
+                    return response
+                
+                # Check if it's a server overload error
+                if response.status_code >= 500:
+                    error_data = response.json() if response.text else {}
+                    error_message = error_data.get("error", {}).get("message", "").lower()
+                    
+                    # Check for overload-related errors
+                    if any(keyword in error_message for keyword in ["overloaded", "server error", "internal error", "service unavailable"]):
+                        if attempt < max_retries - 1:  # Don't sleep on last attempt
+                            wait_time = (2 ** attempt) + (0.1 * attempt)  # Exponential backoff: 1s, 2.1s, 4.2s
+                            print(f"[AnthropicAdapter] Server overloaded, retrying in {wait_time:.1f}s (attempt {attempt + 1}/{max_retries})")
+                            time.sleep(wait_time)
+                            continue
+                
+                # For other errors, don't retry
+                return response
+                
+            except requests.exceptions.Timeout:
+                if attempt < max_retries - 1:
+                    wait_time = (2 ** attempt) + (0.1 * attempt)
+                    print(f"[AnthropicAdapter] Timeout, retrying in {wait_time:.1f}s (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    raise TimeoutError("Request timed out", provider="anthropic")
+        
+        # If we get here, all retries failed
+        return response
     
     def chat(self, request: ChatRequest) -> ChatResponse:
         """Send a chat completion request to Anthropic."""
@@ -51,12 +100,7 @@ class AnthropicAdapter(BaseAdapter):
         payload = {k: v for k, v in payload.items() if v is not None}
         
         try:
-            response = requests.post(
-                url,
-                headers=headers,
-                json=payload,
-                timeout=self.timeout,
-            )
+            response = self._make_request_with_retry(url, headers, payload)
             
             if response.status_code != 200:
                 # Log error details
@@ -104,6 +148,7 @@ class AnthropicAdapter(BaseAdapter):
         # Remove None values
         payload = {k: v for k, v in payload.items() if v is not None}
         
+        # For streaming, we'll try once and let the caller handle retries
         try:
             response = requests.post(
                 url,
