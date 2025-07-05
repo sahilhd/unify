@@ -75,12 +75,19 @@ test_*.py
 quick_test.py
 interactive_test.py
 final_comprehensive_test.py
+comprehensive_test.py
 cool_demo.py
 demo.py
 friend_quick_start.py
 simple_api_test.py
 test_*.py
 test_*_*.py
+get_deployment_api_key.py
+API_KEY_TESTING.md
+YOUR_API_KEY.md
+test_api_key_*.sh
+test_api_key_*.py
+test_auth.html
 
 # Specstory (contains API keys in history)
 .specstory/
