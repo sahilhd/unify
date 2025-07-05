@@ -67,14 +67,21 @@ class ChatCompletion:
             max_tokens=max_tokens,
             **kwargs
         )
-        # Return OpenAI-style response dict
-        return {
-            "choices": [
-                {
-                    "message": {"content": response.content},
-                    "finish_reason": response.finish_reason
-                }
-            ],
-            "model": response.model,
-            "usage": response.usage
-        } 
+        # Return OpenAI-style response object
+        class Message:
+            def __init__(self, content):
+                self.content = content
+        class Choice:
+            def __init__(self, message, finish_reason):
+                self.message = message
+                self.finish_reason = finish_reason
+        class Response:
+            def __init__(self, choices, model, usage):
+                self.choices = choices
+                self.model = model
+                self.usage = usage
+        return Response(
+            choices=[Choice(Message(response.content), response.finish_reason)],
+            model=response.model,
+            usage=response.usage
+        ) 

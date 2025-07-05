@@ -12,6 +12,9 @@ from .exceptions import UniLLMError
 __version__ = "0.1.0"
 __all__ = ["UniLLM", "ChatResponse", "Message", "UniLLMError"]
 
+# Import drop-in replacements
+from . import openai, anthropic
+
 # Set default base URL for the client
 DEFAULT_BASE_URL = "https://web-production-70deb.up.railway.app"
 
