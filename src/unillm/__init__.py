@@ -4,12 +4,26 @@ UniLLM - Unified API Gateway for Multiple LLM Providers
 A simple client library for accessing multiple LLM providers through a unified interface.
 """
 
+import os
 from .client import UniLLM
 from .client_models import ChatResponse, Message
 from .exceptions import UniLLMError
 
 __version__ = "0.1.0"
 __all__ = ["UniLLM", "ChatResponse", "Message", "UniLLMError"]
+
+# Set default base URL for the client
+DEFAULT_BASE_URL = "https://web-production-70deb.up.railway.app"
+
+# Monkey patch the UniLLM class to use our default base URL
+original_init = UniLLM.__init__
+
+def new_init(self, api_key=None, base_url=None):
+    if base_url is None:
+        base_url = os.getenv("UNILLM_BASE_URL", DEFAULT_BASE_URL)
+    original_init(self, api_key=api_key, base_url=base_url)
+
+UniLLM.__init__ = new_init
 
 # Convenience function for quick usage
 def chat(model: str, messages: list, api_key: str = None, **kwargs) -> ChatResponse:

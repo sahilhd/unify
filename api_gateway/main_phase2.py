@@ -302,7 +302,21 @@ async def chat_completion(
             cost=cost,
             remaining_credits=float(current_user.credits)
         )
-        
+    except ModelNotFoundError as e:
+        # Log error
+        usage_log = UsageLog(
+            user_id=current_user.id,
+            model=request.model,
+            provider="unknown",
+            tokens_used=0,
+            cost=0,
+            response_time_ms=int((time.time() - start_time) * 1000),
+            success=False,
+            error_message=str(e)
+        )
+        db.add(usage_log)
+        db.commit()
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         tb = traceback.format_exc()
         print(f"[UniLLM] Exception in /chat/completions: {e}\n{tb}", file=sys.stderr)
@@ -319,7 +333,6 @@ async def chat_completion(
         )
         db.add(usage_log)
         db.commit()
-        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"LLM request failed: {str(e)}\nTraceback:\n{tb}"

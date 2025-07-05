@@ -12,7 +12,7 @@ from .exceptions import UniLLMError
 class UniLLM:
     """Simple client for UniLLM API Gateway."""
     
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "http://localhost:8000"):
+    def __init__(self, api_key: Optional[str] = None, base_url: str = None):
         """
         Initialize the UniLLM client.
         
@@ -26,6 +26,9 @@ class UniLLM:
                 "API key required. Set UNILLM_API_KEY environment variable or pass api_key parameter."
             )
         
+        # Set default base URL if not provided
+        if base_url is None:
+            base_url = os.getenv("UNILLM_BASE_URL", "https://web-production-70deb.up.railway.app")
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
         self.session.headers.update({
