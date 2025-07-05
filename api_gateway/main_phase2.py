@@ -15,6 +15,7 @@ from decimal import Decimal
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import re
 import traceback
+from unillm.exceptions import ModelNotFoundError
 
 security = HTTPBearer()
 
