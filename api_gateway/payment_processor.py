@@ -10,8 +10,8 @@ from decimal import Decimal
 from typing import Dict, Optional, List
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from .database import User, BillingHistory
-from .config import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+from database import User, BillingHistory
+from config import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 
 # Initialize Stripe
 stripe.api_key = STRIPE_SECRET_KEY
