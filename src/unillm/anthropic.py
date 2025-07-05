@@ -5,7 +5,7 @@ import os
 
 # Module-level variables to mimic anthropic
 api_key = None
-api_base = "http://localhost:8000"
+api_base = "https://web-production-70deb.up.railway.app"
 
 DEFAULT_BASE_URL = "https://web-production-70deb.up.railway.app"
 

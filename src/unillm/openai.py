@@ -5,7 +5,7 @@ import os
 
 # Module-level variables to mimic openai
 api_key = None
-api_base = "http://localhost:8000"
+api_base = "https://web-production-70deb.up.railway.app"
 
 DEFAULT_BASE_URL = "https://web-production-70deb.up.railway.app"
 
@@ -56,8 +56,8 @@ class ChatCompletion:
         """
         Drop-in replacement for openai.ChatCompletion.create(...)
         """
-        # Use passed-in or module-level api_key/api_base
-        key = api_key or globals()["api_key"]
+        # Use passed-in, module-level, or environment variable for api_key
+        key = api_key or globals()["api_key"] or os.getenv("UNILLM_API_KEY")
         base = api_base or globals()["api_base"]
         client = UniLLM(api_key=key, base_url=base)
         response = client.chat(
