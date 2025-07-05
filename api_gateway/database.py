@@ -80,6 +80,8 @@ class BillingHistory(Base):
     amount = Column(DECIMAL(10, 4), nullable=False)
     description = Column(String, nullable=False)
     transaction_type = Column(String, nullable=False)  # 'credit_purchase', 'usage_charge', 'refund'
+    stripe_payment_intent_id = Column(String, nullable=True, index=True)
+    stripe_refund_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, default=func.now(), nullable=False)
 
 # Create tables

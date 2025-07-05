@@ -31,6 +31,7 @@ from auth import (
     require_admin, verify_token, get_user_by_api_key
 )
 from middleware import RateLimitMiddleware, UsageTrackingMiddleware, CreditCheckMiddleware
+from payment_processor import PaymentProcessor, WebhookHandler
 
 # Import the custom Phase 2 LLM client
 from phase2_llm_client import Phase2LLMClient
@@ -115,6 +116,12 @@ class ChatResponse(BaseModel):
 class CreditPurchase(BaseModel):
     amount: float
     payment_method: str
+
+class PaymentIntentRequest(BaseModel):
+    credit_amount: int
+
+class PaymentConfirmRequest(BaseModel):
+    payment_intent_id: str
 
 class UsageStats(BaseModel):
     total_requests: int
@@ -441,6 +448,89 @@ async def get_billing_history(
         }
         for record in history
     ]
+
+# Payment Processing Endpoints
+@app.post("/billing/create-payment-intent")
+async def create_payment_intent(
+    request: PaymentIntentRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db=Depends(get_db)
+):
+    """Create a Stripe payment intent for credit purchase"""
+    token = credentials.credentials
+    
+    # Get current user
+    try:
+        if is_jwt(token):
+            current_user = get_current_user_jwt(credentials, db)
+        else:
+            current_user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    # Create payment intent
+    payment_data = PaymentProcessor.create_payment_intent(current_user, request.credit_amount)
+    
+    return {
+        "client_secret": payment_data["client_secret"],
+        "payment_intent_id": payment_data["payment_intent_id"],
+        "amount_usd": payment_data["amount_usd"],
+        "credit_amount": payment_data["credit_amount"]
+    }
+
+@app.post("/billing/confirm-payment")
+async def confirm_payment(
+    request: PaymentConfirmRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db=Depends(get_db)
+):
+    """Confirm payment and add credits to user account"""
+    token = credentials.credentials
+    
+    # Get current user
+    try:
+        if is_jwt(token):
+            current_user = get_current_user_jwt(credentials, db)
+        else:
+            current_user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    # Process payment success
+    result = PaymentProcessor.process_payment_success(db, request.payment_intent_id)
+    
+    return result
+
+@app.get("/billing/credit-packages")
+async def get_credit_packages():
+    """Get available credit packages with pricing"""
+    return PaymentProcessor.get_credit_packages()
+
+@app.post("/billing/webhook")
+async def stripe_webhook(request: Request, db=Depends(get_db)):
+    """Handle Stripe webhook events"""
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature")
+    
+    if not signature:
+        raise HTTPException(status_code=400, detail="Missing stripe-signature header")
+    
+    try:
+        result = WebhookHandler.handle_webhook(payload, signature, db)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/billing/refund")
+async def refund_payment(
+    payment_intent_id: str,
+    reason: str = "Customer request",
+    admin: User = Depends(require_admin),
+    db=Depends(get_db)
+):
+    """Process refund for a payment (admin only)"""
+    result = PaymentProcessor.refund_payment(db, payment_intent_id, reason)
+    return result
 
 # Admin endpoints
 @app.get("/admin/users")

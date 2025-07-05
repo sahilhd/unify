@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   PlusIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  CreditCardIcon
 } from '@heroicons/react/24/outline';
+import StripePayment from '../StripePayment';
 
 const Billing: React.FC = () => {
   const { user } = useAuth();
   const [credits, setCredits] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showStripePayment, setShowStripePayment] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -16,32 +19,14 @@ const Billing: React.FC = () => {
     }
   }, [user]);
 
-  const purchaseCredits = async (amount: number) => {
-    setLoading(true);
-    try {
-      const apiKey = localStorage.getItem('unillm_api_key');
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000'}/billing/purchase-credits`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ credits: amount }),
-      });
+  const handlePaymentSuccess = (creditsAdded: number, amount: number) => {
+    setCredits(prev => prev + creditsAdded);
+    setShowStripePayment(false);
+    alert(`Successfully purchased ${creditsAdded} credits for $${amount}!`);
+  };
 
-      if (response.ok) {
-        const data = await response.json();
-        setCredits(data.credits);
-        alert(`Successfully purchased ${amount} credits!`);
-      } else {
-        alert('Failed to purchase credits. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error purchasing credits:', error);
-      alert('An error occurred while purchasing credits.');
-    } finally {
-      setLoading(false);
-    }
+  const handlePaymentError = (error: string) => {
+    alert(`Payment failed: ${error}`);
   };
 
   const creditPackages = [
@@ -104,7 +89,7 @@ const Billing: React.FC = () => {
                   </div>
                   
                   <button
-                    onClick={() => purchaseCredits(pkg.amount)}
+                    onClick={() => setShowStripePayment(true)}
                     disabled={loading}
                     className="mt-4 w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white py-2 px-4 rounded-md transition-colors flex items-center justify-center space-x-2"
                   >
@@ -112,7 +97,7 @@ const Billing: React.FC = () => {
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     ) : (
                       <>
-                        <PlusIcon className="h-4 w-4" />
+                        <CreditCardIcon className="h-4 w-4" />
                         <span>Purchase</span>
                       </>
                     )}
@@ -211,6 +196,18 @@ const Billing: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Stripe Payment Modal */}
+      {showStripePayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <StripePayment
+              onSuccess={handlePaymentSuccess}
+              onError={handlePaymentError}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
