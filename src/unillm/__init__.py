@@ -10,7 +10,7 @@ from .client_models import ChatResponse, Message
 from .exceptions import UniLLMError
 
 __version__ = "0.1.0"
-__all__ = ["UniLLM", "ChatResponse", "Message", "UniLLMError"]
+__all__ = ["UniLLM", "ChatResponse", "Message", "UniLLMError", "openai", "anthropic", "chat"]
 
 # Import drop-in replacements
 from . import openai, anthropic
