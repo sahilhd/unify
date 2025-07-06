@@ -16,6 +16,9 @@ from config import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 # Initialize Stripe
 stripe.api_key = STRIPE_SECRET_KEY
 
+
+print("Loaded STRIPE_SECRET_KEY:", os.getenv("STRIPE_SECRET_KEY"))
+
 class PaymentProcessor:
     """Handles payment processing and credit purchases"""
     
