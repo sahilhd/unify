@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
-  PlusIcon,
   CurrencyDollarIcon,
   CreditCardIcon
 } from '@heroicons/react/24/outline';
@@ -14,7 +13,6 @@ const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY ||
 const Billing: React.FC = () => {
   const { user } = useAuth();
   const [credits, setCredits] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [showStripePayment, setShowStripePayment] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
 
@@ -93,17 +91,10 @@ const Billing: React.FC = () => {
                   </div>
                   <button
                     onClick={() => { setSelectedPackage(pkg); setShowStripePayment(true); }}
-                    disabled={loading}
-                    className="mt-4 w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white py-2 px-4 rounded-md transition-colors flex items-center justify-center space-x-2"
+                    className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-md transition-colors flex items-center justify-center space-x-2"
                   >
-                    {loading ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    ) : (
-                      <>
-                        <CreditCardIcon className="h-4 w-4" />
-                        <span>Purchase</span>
-                      </>
-                    )}
+                    <CreditCardIcon className="h-4 w-4" />
+                    <span>Purchase</span>
                   </button>
                 </div>
               </div>
