@@ -428,6 +428,51 @@ async def get_usage_stats(
         cost_today=cost_today
     )
 
+@app.get("/billing/usage-over-time")
+async def usage_over_time(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db=Depends(get_db),
+    days: int = 30
+):
+    """Return daily usage stats for the current user for the last N days (default 30)."""
+    token = credentials.credentials
+    # Try JWT first, then API key
+    try:
+        if is_jwt(token):
+            user = get_current_user_jwt(credentials, db)
+        else:
+            user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+
+    end_date = datetime.now().date()
+    start_date = end_date - timedelta(days=days-1)
+
+    # Query usage logs for the user in the date range
+    logs = db.query(UsageLog).filter(
+        UsageLog.user_id == user.id,
+        UsageLog.request_timestamp >= start_date
+    ).all()
+
+    # Group by day
+    usage_by_day = {}
+    for log in logs:
+        day = log.request_timestamp.date().isoformat()
+        if day not in usage_by_day:
+            usage_by_day[day] = {"requests": 0, "tokens": 0, "cost": 0.0}
+        usage_by_day[day]["requests"] += 1
+        usage_by_day[day]["tokens"] += log.tokens_used
+        usage_by_day[day]["cost"] += float(log.cost)
+
+    # Fill in days with zero usage
+    result = []
+    for i in range(days):
+        day = (start_date + timedelta(days=i)).isoformat()
+        stats = usage_by_day.get(day, {"requests": 0, "tokens": 0, "cost": 0.0})
+        result.append({"date": day, **stats})
+
+    return result
+
 @app.get("/billing/history")
 async def get_billing_history(
     credentials: HTTPAuthorizationCredentials = Depends(security),

@@ -8,6 +8,9 @@ import {
   ArrowUpIcon,
   ArrowDownIcon
 } from '@heroicons/react/24/outline';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
+} from 'recharts';
 
 interface UsageStats {
   total_requests: number;
@@ -38,6 +41,8 @@ export const useUsageStats = () => {
 const Analytics: React.FC = () => {
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [usageOverTime, setUsageOverTime] = useState<any[]>([]);
+  const [chartMetric, setChartMetric] = useState<'requests' | 'tokens' | 'cost'>('requests');
 
   const fetchUsageStats = async () => {
     try {
@@ -69,6 +74,26 @@ const Analytics: React.FC = () => {
     }
   };
 
+  const fetchUsageOverTime = async () => {
+    try {
+      const apiKey = localStorage.getItem('unillm_api_key');
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000'}/billing/usage-over-time`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUsageOverTime(data);
+      } else {
+        setUsageOverTime([]);
+      }
+    } catch (error) {
+      setUsageOverTime([]);
+    }
+  };
+
   // Override the context's refreshUsageStats to also update local state
   const handleRefresh = () => {
     fetchUsageStats();
@@ -76,6 +101,7 @@ const Analytics: React.FC = () => {
 
   useEffect(() => {
     fetchUsageStats();
+    fetchUsageOverTime();
   }, []);
 
   const stats = [
@@ -172,20 +198,41 @@ const Analytics: React.FC = () => {
         ))}
       </div>
 
-      {/* Usage Chart Placeholder */}
+      {/* Usage Chart */}
       <div className="bg-gray-800 shadow rounded-lg border border-gray-700">
         <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-white">Usage Over Time</h3>
-          <div className="mt-2 max-w-xl text-sm text-gray-400">
-            <p>Detailed usage analytics and charts coming soon...</p>
+          <h3 className="text-lg leading-6 font-medium text-white mb-4">Usage Over Time</h3>
+          <div className="mb-4 flex space-x-2">
+            <button
+              className={`px-3 py-1 rounded-md text-sm font-medium ${chartMetric === 'requests' ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+              onClick={() => setChartMetric('requests')}
+            >
+              Requests
+            </button>
+            <button
+              className={`px-3 py-1 rounded-md text-sm font-medium ${chartMetric === 'tokens' ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+              onClick={() => setChartMetric('tokens')}
+            >
+              Tokens
+            </button>
+            <button
+              className={`px-3 py-1 rounded-md text-sm font-medium ${chartMetric === 'cost' ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+              onClick={() => setChartMetric('cost')}
+            >
+              Cost
+            </button>
           </div>
-          <div className="mt-5">
-            <div className="h-64 bg-gray-700 rounded-md flex items-center justify-center">
-              <div className="text-center">
-                <ChartBarIcon className="mx-auto h-12 w-12 text-gray-500" />
-                <p className="mt-2 text-sm text-gray-400">Chart visualization</p>
-              </div>
-            </div>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={usageOverTime} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" tick={{ fill: '#ccc', fontSize: 12 }} />
+                <YAxis tick={{ fill: '#ccc', fontSize: 12 }} />
+                <Tooltip contentStyle={{ background: '#222', border: 'none', color: '#fff' }} />
+                <Legend />
+                <Line type="monotone" dataKey={chartMetric} stroke="#a78bfa" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
