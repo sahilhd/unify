@@ -50,7 +50,7 @@ RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
 DAILY_QUOTA = int(os.getenv("DAILY_QUOTA", "10000"))
 
 # Billing
-DEFAULT_CREDITS = float(os.getenv("DEFAULT_CREDITS", "10.0"))
+DEFAULT_CREDITS = 0.0024
 MIN_CREDITS_FOR_REQUEST = float(os.getenv("MIN_CREDITS_FOR_REQUEST", "0.001"))
 
 # Stripe Configuration
