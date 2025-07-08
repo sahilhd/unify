@@ -163,19 +163,6 @@ const Analytics: React.FC = () => {
                       <div className="text-2xl font-semibold text-white">
                         {item.value}
                       </div>
-                      <div className={`ml-2 flex items-baseline text-sm font-semibold ${
-                        item.changeType === 'positive' ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {item.changeType === 'positive' ? (
-                          <ArrowUpIcon className="self-center flex-shrink-0 h-4 w-4" />
-                        ) : (
-                          <ArrowDownIcon className="self-center flex-shrink-0 h-4 w-4" />
-                        )}
-                        <span className="sr-only">
-                          {item.changeType === 'positive' ? 'Increased' : 'Decreased'} by
-                        </span>
-                        {item.change}
-                      </div>
                     </dd>
                   </dl>
                 </div>
@@ -197,49 +184,6 @@ const Analytics: React.FC = () => {
               <div className="text-center">
                 <ChartBarIcon className="mx-auto h-12 w-12 text-gray-500" />
                 <p className="mt-2 text-sm text-gray-400">Chart visualization</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="bg-gray-800 shadow rounded-lg border border-gray-700">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-white">Recent Activity</h3>
-          <div className="mt-2 max-w-xl text-sm text-gray-400">
-            <p>Your recent API requests and usage patterns</p>
-          </div>
-          <div className="mt-5">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-700 rounded-md">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="h-8 w-8 bg-purple-500 rounded-full flex items-center justify-center">
-                      <ChatBubbleLeftRightIcon className="h-4 w-4 text-white" />
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-white">Chat completion request</p>
-                    <p className="text-sm text-gray-400">gpt-3.5-turbo • 2 minutes ago</p>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-400">$0.002</div>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-gray-700 rounded-md">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center">
-                      <ChatBubbleLeftRightIcon className="h-4 w-4 text-white" />
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-white">Chat completion request</p>
-                    <p className="text-sm text-gray-400">claude-3-sonnet • 5 minutes ago</p>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-400">$0.015</div>
               </div>
             </div>
           </div>
