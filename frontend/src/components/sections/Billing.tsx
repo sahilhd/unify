@@ -7,6 +7,7 @@ import {
 import StripePayment from '../StripePayment';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
+import { API_BASE_URL } from '../../utils/config';
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || 'pk_test_your_key_here');
 
@@ -15,12 +16,39 @@ const Billing: React.FC = () => {
   const [credits, setCredits] = useState(0);
   const [showStripePayment, setShowStripePayment] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
+  const [billingHistory, setBillingHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   useEffect(() => {
     if (user) {
       setCredits(user.credits || 0);
+      fetchBillingHistory();
     }
+    // eslint-disable-next-line
   }, [user]);
+
+  const fetchBillingHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const apiKey = localStorage.getItem('unillm_api_key');
+      const response = await fetch(`${API_BASE_URL}/billing/history`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBillingHistory(data);
+      } else {
+        setBillingHistory([]);
+      }
+    } catch (error) {
+      setBillingHistory([]);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const handlePaymentSuccess = (creditsAdded: number, amount: number) => {
     setCredits(prev => prev + creditsAdded);
@@ -108,34 +136,28 @@ const Billing: React.FC = () => {
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-white mb-4">Billing History</h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-700 rounded-md">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <CurrencyDollarIcon className="h-4 w-4 text-white" />
+            {loadingHistory ? (
+              <div className="text-gray-400">Loading billing history...</div>
+            ) : billingHistory.length === 0 ? (
+              <div className="text-gray-400">No billing history found.</div>
+            ) : (
+              billingHistory.map((record, idx) => (
+                <div key={record.id || idx} className="flex items-center justify-between p-4 bg-gray-700 rounded-md">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center ${record.transaction_type === 'credit_purchase' ? 'bg-green-500' : record.transaction_type === 'refund' ? 'bg-red-500' : 'bg-blue-500'}`}>
+                        <CurrencyDollarIcon className="h-4 w-4 text-white" />
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-white">{record.description}</p>
+                      <p className="text-sm text-gray-400">{record.amount > 0 ? '+' : ''}{record.amount} credits • {new Date(record.created_at).toLocaleString()}</p>
+                    </div>
                   </div>
+                  <div className={`text-sm ${record.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>{record.amount > 0 ? '+' : ''}${Math.abs(record.amount).toFixed(2)}</div>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-white">Credit Purchase</p>
-                  <p className="text-sm text-gray-400">500 credits • 2 days ago</p>
-                </div>
-              </div>
-              <div className="text-sm text-green-400">+$45.00</div>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-gray-700 rounded-md">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <CurrencyDollarIcon className="h-4 w-4 text-white" />
-                  </div>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-white">Credit Purchase</p>
-                  <p className="text-sm text-gray-400">100 credits • 1 week ago</p>
-                </div>
-              </div>
-              <div className="text-sm text-green-400">+$10.00</div>
-            </div>
+              ))
+            )}
           </div>
         </div>
       </div>
