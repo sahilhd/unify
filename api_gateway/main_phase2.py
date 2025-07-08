@@ -430,12 +430,21 @@ async def get_usage_stats(
 
 @app.get("/billing/history")
 async def get_billing_history(
-    current_user: User = Depends(get_current_user_jwt),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     db=Depends(get_db)
 ):
-    """Get billing history"""
+    token = credentials.credentials
+    # Try JWT first, then API key
+    try:
+        if is_jwt(token):
+            user = get_current_user_jwt(credentials, db)
+        else:
+            user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+
     history = db.query(BillingHistory).filter(
-        BillingHistory.user_id == current_user.id
+        BillingHistory.user_id == user.id
     ).order_by(BillingHistory.created_at.desc()).all()
     
     return [
