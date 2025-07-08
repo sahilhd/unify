@@ -18,6 +18,7 @@ const Billing: React.FC = () => {
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [billingHistory, setBillingHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -29,21 +30,33 @@ const Billing: React.FC = () => {
 
   const fetchBillingHistory = async () => {
     setLoadingHistory(true);
+    setHistoryError(null);
     try {
       const apiKey = localStorage.getItem('unillm_api_key');
+      if (!apiKey) {
+        setHistoryError('You must be logged in to view billing history.');
+        setBillingHistory([]);
+        setLoadingHistory(false);
+        return;
+      }
       const response = await fetch(`${API_BASE_URL}/billing/history`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
       });
-      if (response.ok) {
+      if (response.status === 401) {
+        setHistoryError('Session expired or unauthorized. Please log in again.');
+        setBillingHistory([]);
+      } else if (response.ok) {
         const data = await response.json();
         setBillingHistory(data);
       } else {
+        setHistoryError('Failed to fetch billing history.');
         setBillingHistory([]);
       }
     } catch (error) {
+      setHistoryError('Error fetching billing history.');
       setBillingHistory([]);
     } finally {
       setLoadingHistory(false);
@@ -138,6 +151,8 @@ const Billing: React.FC = () => {
           <div className="space-y-4">
             {loadingHistory ? (
               <div className="text-gray-400">Loading billing history...</div>
+            ) : historyError ? (
+              <div className="text-red-400">{historyError}</div>
             ) : billingHistory.length === 0 ? (
               <div className="text-gray-400">No billing history found.</div>
             ) : (
