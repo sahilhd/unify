@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import LoginSuccess from './components/LoginSuccess';
 import './App.css';
 
 function App() {
@@ -28,14 +29,18 @@ function AppContent() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
-
+  // Allow /login-success route even if not authenticated
   return (
     <Routes>
-      <Route path="/dashboard/*" element={<Dashboard />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/login-success" element={<LoginSuccess />} />
+      {!isAuthenticated ? (
+        <Route path="*" element={<LoginPage />} />
+      ) : (
+        <>
+          <Route path="/dashboard/*" element={<Dashboard />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        </>
+      )}
     </Routes>
   );
 }
