@@ -704,7 +704,8 @@ oauth.register(
 
 @app.get("/auth/google/login")
 async def google_login(request: StarletteRequest):
-    redirect_uri = request.url_for('google_callback')
+    # Hardcode the redirect_uri to match Google Cloud Console
+    redirect_uri = "https://unify-production-82fc.up.railway.app/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @app.get("/auth/google/callback")
