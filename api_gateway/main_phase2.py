@@ -21,6 +21,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import re
 import traceback
 from unillm.exceptions import ModelNotFoundError
+from authlib.integrations.starlette_client import OAuth
+from starlette.requests import Request as StarletteRequest
+from starlette.responses import RedirectResponse
 
 security = HTTPBearer()
 
@@ -676,6 +679,57 @@ async def list_models():
         })
     
     return {"models": models}
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+
+# Set up Authlib OAuth
+oauth = OAuth()
+oauth.register(
+    name='google',
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={
+        'scope': 'openid email profile',
+    },
+)
+
+@app.get("/auth/google/login")
+async def google_login(request: StarletteRequest):
+    redirect_uri = request.url_for('google_callback')
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@app.get("/auth/google/callback")
+async def google_callback(request: StarletteRequest, db=Depends(get_db)):
+    token = await oauth.google.authorize_access_token(request)
+    user_info = await oauth.google.parse_id_token(request, token)
+    email = user_info.get('email')
+    if not email:
+        raise HTTPException(status_code=400, detail="Google login failed: no email")
+    # Find or create user
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        # Create new user with random API key and no password
+        api_key = generate_api_key()
+        user = User(
+            email=email,
+            password_hash='',
+            api_key=api_key,
+            credits=DEFAULT_CREDITS,
+            rate_limit_per_minute=RATE_LIMIT_PER_MINUTE,
+            daily_quota=DAILY_QUOTA,
+            is_active=True
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    # Issue JWT token
+    access_token = create_access_token(data={"sub": user.email})
+    # Redirect to frontend with token (customize as needed)
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    redirect_url = f"{frontend_url}/login-success?token={access_token}&api_key={user.api_key}"
+    return RedirectResponse(redirect_url)
 
 
 if __name__ == "__main__":
