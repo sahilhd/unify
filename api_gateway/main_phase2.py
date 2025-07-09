@@ -710,34 +710,40 @@ async def google_login(request: StarletteRequest):
 
 @app.get("/auth/google/callback")
 async def google_callback(request: StarletteRequest, db=Depends(get_db)):
-    token = await oauth.google.authorize_access_token(request)
-    user_info = await oauth.google.parse_id_token(request, token)
-    email = user_info.get('email')
-    if not email:
-        raise HTTPException(status_code=400, detail="Google login failed: no email")
-    # Find or create user
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        # Create new user with random API key and no password
-        api_key = generate_api_key()
-        user = User(
-            email=email,
-            password_hash='',
-            api_key=api_key,
-            credits=DEFAULT_CREDITS,
-            rate_limit_per_minute=RATE_LIMIT_PER_MINUTE,
-            daily_quota=DAILY_QUOTA,
-            is_active=True
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    # Issue JWT token
-    access_token = create_access_token(data={"sub": user.email})
-    # Redirect to frontend with token (customize as needed)
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    redirect_url = f"{frontend_url}/login-success?token={access_token}&api_key={user.api_key}"
-    return RedirectResponse(redirect_url)
+    try:
+        token = await oauth.google.authorize_access_token(request)
+        user_info = await oauth.google.parse_id_token(request, token)
+        print("[Google OAuth] user_info:", user_info)
+        email = user_info.get('email')
+        if not email:
+            print("[Google OAuth] No email in user_info")
+            raise HTTPException(status_code=400, detail="Google login failed: no email")
+        # Find or create user
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            # Create new user with random API key and no password
+            api_key = generate_api_key()
+            user = User(
+                email=email,
+                password_hash='',
+                api_key=api_key,
+                credits=DEFAULT_CREDITS,
+                rate_limit_per_minute=RATE_LIMIT_PER_MINUTE,
+                daily_quota=DAILY_QUOTA,
+                is_active=True
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        # Issue JWT token
+        access_token = create_access_token(data={"sub": user.email})
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        redirect_url = f"{frontend_url}/login-success?token={access_token}&api_key={user.api_key}"
+        print(f"[Google OAuth] Redirecting to: {redirect_url}")
+        return RedirectResponse(redirect_url)
+    except Exception as e:
+        print(f"[Google OAuth] Exception: {e}")
+        raise
 
 
 if __name__ == "__main__":
