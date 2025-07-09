@@ -710,8 +710,10 @@ async def google_login(request: StarletteRequest):
 
 @app.get("/auth/google/callback")
 async def google_callback(request: StarletteRequest, db=Depends(get_db)):
+    print("[Google OAuth] Callback endpoint hit")
     try:
         token = await oauth.google.authorize_access_token(request)
+        print("[Google OAuth] Token received:", token)
         user_info = await oauth.google.parse_id_token(request, token)
         print("[Google OAuth] user_info:", user_info)
         email = user_info.get('email')
@@ -721,7 +723,7 @@ async def google_callback(request: StarletteRequest, db=Depends(get_db)):
         # Find or create user
         user = db.query(User).filter(User.email == email).first()
         if not user:
-            # Create new user with random API key and no password
+            print("[Google OAuth] Creating new user for email:", email)
             api_key = generate_api_key()
             user = User(
                 email=email,
@@ -735,8 +737,11 @@ async def google_callback(request: StarletteRequest, db=Depends(get_db)):
             db.add(user)
             db.commit()
             db.refresh(user)
+        else:
+            print("[Google OAuth] Found existing user for email:", email)
         # Issue JWT token
         access_token = create_access_token(data={"sub": user.email})
+        print("[Google OAuth] Issued access_token:", access_token)
         frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
         redirect_url = f"{frontend_url}/login-success?token={access_token}&api_key={user.api_key}"
         print(f"[Google OAuth] Redirecting to: {redirect_url}")
