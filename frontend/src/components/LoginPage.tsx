@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +29,10 @@ const LoginPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${process.env.REACT_APP_API_BASE_URL || 'https://unify-production-82fc.up.railway.app'}/auth/google/login`;
   };
 
   return (
@@ -109,6 +115,16 @@ const LoginPage: React.FC = () => {
             </button>
           </div>
         </form>
+
+        <div className="mt-6 flex flex-col items-center">
+          <button
+            onClick={handleGoogleLogin}
+            className="w-full flex items-center justify-center bg-white text-gray-800 font-semibold py-2 px-4 rounded shadow hover:bg-gray-100 transition-colors mb-2"
+          >
+            <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="h-5 w-5 mr-2" />
+            Sign in with Google
+          </button>
+        </div>
       </div>
     </div>
   );
