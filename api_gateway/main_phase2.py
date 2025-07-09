@@ -701,6 +701,7 @@ oauth.register(
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={
         'scope': 'openid email profile',
+        'redirect_uri': 'https://unify-production-82fc.up.railway.app/auth/google/callback'
     },
 )
 
@@ -712,7 +713,6 @@ async def google_login(request: StarletteRequest):
 
 @app.get("/auth/google/callback")
 async def google_callback(request: StarletteRequest, db=Depends(get_db)):
-    raise Exception("Callback endpoint was hit!")
     logger.info("[Google OAuth] Callback endpoint hit")
     try:
         token = await oauth.google.authorize_access_token(request)
