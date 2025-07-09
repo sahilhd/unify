@@ -24,6 +24,7 @@ from unillm.exceptions import ModelNotFoundError
 from authlib.integrations.starlette_client import OAuth
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import RedirectResponse
+from starlette.middleware.sessions import SessionMiddleware
 
 security = HTTPBearer()
 
@@ -62,6 +63,12 @@ app = FastAPI(
     description="Unified LLM API with authentication and billing",
     version="2.0.0",
     debug=DEBUG
+)
+
+# Add SessionMiddleware for OAuth support
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SESSION_SECRET_KEY", "super-secret-session-key")
 )
 
 # Add CORS middleware with environment-specific origins
