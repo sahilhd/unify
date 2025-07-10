@@ -708,8 +708,7 @@ oauth.register(
     client_secret=GOOGLE_CLIENT_SECRET,
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={
-        'scope': 'openid email profile',
-        'redirect_uri': 'https://unify-production-82fc.up.railway.app/auth/google/callback'
+        'scope': 'openid email profile'
     },
 )
 
@@ -719,7 +718,7 @@ logger.info("[Google OAuth] OAuth configuration completed")
 async def google_login(request: StarletteRequest):
     logger.info("[Google OAuth] Login endpoint hit")
     # Hardcode the redirect_uri to match Google Cloud Console
-    redirect_uri = "https://unify-production-82fc.up.railway.app/auth/google/callback"
+    redirect_uri = "https://web-production-70deb.up.railway.app/auth/google/callback"
     logger.info(f"[Google OAuth] Using redirect_uri: {redirect_uri}")
     try:
         response = await oauth.google.authorize_redirect(request, redirect_uri)
