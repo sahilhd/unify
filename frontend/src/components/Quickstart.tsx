@@ -3,37 +3,27 @@ import Navbar from './Navbar';
 
 export default function Quickstart() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col items-center py-12 px-4">
+    <div className="relative min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 flex flex-col items-center pb-16">
       <Navbar />
-      <div className="max-w-4xl w-full">
-        <h1 className="text-4xl font-extrabold mb-6 text-purple-400 text-center">Quickstart</h1>
+      {/* Animated blurred gradient accent */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70vw] h-[30vh] bg-gradient-to-tr from-purple-500/30 via-blue-400/20 to-fuchsia-400/20 rounded-full blur-3xl opacity-60 pointer-events-none animate-pulse z-0" />
+      <section className="pt-24 pb-10 text-center z-10 relative">
+        <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-blue-400 to-fuchsia-400 mb-6 drop-shadow-lg tracking-tight">Quickstart</h1>
+        <p className="text-xl text-gray-300 max-w-2xl mx-auto font-light mb-12">Get started with UniLLM in minutes. Unified API, open source, and developer-first.</p>
+      </section>
+      <div className="max-w-4xl w-full z-10 relative">
         <section className="mb-10">
           <h2 className="text-2xl font-bold mb-2 text-purple-300">Get Started</h2>
           <p className="mb-4 text-gray-300">UniLLM provides a unified API and SDK for accessing multiple LLM providers. Get started in minutes with our Python SDK or direct API calls.</p>
-          <div className="bg-gray-800 rounded-lg p-4 mb-4">
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 mb-4 shadow-xl">
             <div className="text-sm text-gray-400 mb-2">Python SDK Example</div>
-            <pre className="bg-gray-900 rounded p-3 overflow-x-auto text-sm text-green-200"><code>{`from unillm import UniLLM
-
-client = UniLLM(api_key="your-api-key")
-
-response = client.chat(
-    model="gpt-4",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-print(response.content)`}</code></pre>
+            <pre className="bg-gray-900/80 rounded p-3 overflow-x-auto text-sm text-green-200"><code>{`from unillm import UniLLM\n\nclient = UniLLM(api_key=\"your-api-key\")\n\nresponse = client.chat(\n    model=\"gpt-4\",\n    messages=[{\"role\": \"user\", \"content\": \"Hello!\"}]\n)\nprint(response.content)`}</code></pre>
           </div>
-          <div className="bg-gray-800 rounded-lg p-4">
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 shadow-xl">
             <div className="text-sm text-gray-400 mb-2">Direct API Example (cURL)</div>
-            <pre className="bg-gray-900 rounded p-3 overflow-x-auto text-sm text-blue-200"><code>{`curl -X POST https://web-production-70deb.up.railway.app/chat/completions \
-  -H "Authorization: Bearer your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4",
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'`}</code></pre>
+            <pre className="bg-gray-900/80 rounded p-3 overflow-x-auto text-sm text-blue-200"><code>{`curl -X POST https://web-production-70deb.up.railway.app/chat/completions \\\n  -H \"Authorization: Bearer your-api-key\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"model\": \"gpt-4\",\n    \"messages\": [{\"role\": \"user\", \"content\": \"Hello!\"}]\n  }'`}</code></pre>
           </div>
         </section>
-
         <section className="mb-10">
           <h2 className="text-2xl font-bold mb-2 text-purple-300">Features</h2>
           <ul className="list-disc list-inside text-gray-300 space-y-1">
@@ -45,7 +35,6 @@ print(response.content)`}</code></pre>
             <li>Open source and developer-friendly</li>
           </ul>
         </section>
-
         <section className="mb-10">
           <h2 className="text-2xl font-bold mb-2 text-purple-300">Deployment Options: Hosted or Self-Hosted</h2>
           <p className="mb-4 text-gray-300">UniLLM is designed for maximum flexibility. You can:</p>
@@ -55,25 +44,17 @@ print(response.content)`}</code></pre>
           </ul>
           <p className="text-gray-400">Choose the option that fits your needs. Both offer the same powerful features, unified API, and developer experience.</p>
         </section>
-
         <section className="mb-10">
           <h2 className="text-2xl font-bold mb-2 text-purple-300">API Reference</h2>
-          <div className="bg-gray-800 rounded-lg p-4 mb-4">
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 mb-4 shadow-xl">
             <div className="text-sm text-gray-400 mb-2">POST /chat/completions</div>
-            <pre className="bg-gray-900 rounded p-3 overflow-x-auto text-sm text-blue-200"><code>{`{
-  "model": "gpt-4",
-  "messages": [
-    {"role": "user", "content": "Say hello!"}
-  ],
-  "temperature": 0.7,
-  "max_tokens": 1000
-}`}</code></pre>
+            <pre className="bg-gray-900/80 rounded p-3 overflow-x-auto text-sm text-blue-200"><code>{`{\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"Say hello!\"}\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 1000\n}`}</code></pre>
           </div>
-          <div className="bg-gray-800 rounded-lg p-4 mb-4">
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 mb-4 shadow-xl">
             <div className="text-sm text-gray-400 mb-2">Authentication</div>
-            <pre className="bg-gray-900 rounded p-3 overflow-x-auto text-sm text-blue-200"><code>{`Authorization: Bearer your-api-key`}</code></pre>
+            <pre className="bg-gray-900/80 rounded p-3 overflow-x-auto text-sm text-blue-200"><code>{`Authorization: Bearer your-api-key`}</code></pre>
           </div>
-          <div className="bg-gray-800 rounded-lg p-4">
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 shadow-xl">
             <div className="text-sm text-gray-400 mb-2">Other Endpoints</div>
             <ul className="list-disc list-inside text-gray-300">
               <li><span className="font-mono">/auth/register</span> - Register a new user</li>
@@ -84,7 +65,6 @@ print(response.content)`}</code></pre>
             </ul>
           </div>
         </section>
-
         <section className="mb-10">
           <h2 className="text-2xl font-bold mb-2 text-purple-300">Use Cases</h2>
           <ul className="list-disc list-inside text-gray-300 space-y-1">
@@ -94,7 +74,6 @@ print(response.content)`}</code></pre>
             <li>Track and manage LLM usage and costs for your team</li>
           </ul>
         </section>
-
         <section className="mb-10">
           <h2 className="text-2xl font-bold mb-2 text-purple-300">FAQ</h2>
           <ul className="list-disc list-inside text-gray-300 space-y-1">
@@ -104,10 +83,9 @@ print(response.content)`}</code></pre>
             <li><span className="font-semibold text-purple-200">Where can I get support?</span> Open an issue on GitHub or email support@unillm.com</li>
           </ul>
         </section>
-
         <div className="flex flex-col md:flex-row gap-4 justify-center mt-8">
-          <a href="/pricing" className="px-8 py-3 bg-purple-500 hover:bg-purple-600 rounded text-lg font-semibold text-white shadow text-center">See Pricing</a>
-          <a href="https://github.com/sahilhd/unify" target="_blank" rel="noopener noreferrer" className="px-8 py-3 bg-gray-700 hover:bg-gray-600 rounded text-lg font-semibold text-white shadow text-center">View on GitHub</a>
+          <a href="/pricing" className="px-8 py-3 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 rounded-full text-lg font-semibold text-white shadow-xl transition-all duration-200 text-center">See Pricing</a>
+          <a href="https://github.com/sahilhd/unify" target="_blank" rel="noopener noreferrer" className="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-full text-lg font-semibold text-white shadow-xl border border-white/10 transition-all duration-200 text-center">View on GitHub</a>
         </div>
       </div>
     </div>
