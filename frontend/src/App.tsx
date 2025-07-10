@@ -7,6 +7,7 @@ import LoginSuccess from './components/LoginSuccess';
 import LandingPage from './components/LandingPage';
 import Features from './components/Features';
 import Pricing from './components/Pricing';
+import Quickstart from './components/Quickstart';
 import './App.css';
 
 function App() {
@@ -40,6 +41,7 @@ function AppContent() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/features" element={<Features />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/quickstart" element={<Quickstart />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<LandingPage />} />
         </>
