@@ -211,9 +211,49 @@ response = client.chat(model="claude-3-sonnet", messages=messages)
 print(response.content)
 ```
 
-## 🚀 Deployment
+## 🚀 Deployment Options
 
-### Option 1: Deploy to Railway (Recommended)
+### Option 1: Self-Hosting (Recommended for Privacy & Control)
+
+**Perfect for developers who want full control over their LLM API gateway with their own API keys.**
+
+#### Quick Start (5 minutes)
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/unillm
+cd unillm
+
+# Set up backend
+cd api_gateway
+pip install -r requirements.txt
+cp env_example.txt .env
+# Edit .env with your API keys
+
+# Start the server
+python main_phase2.py
+```
+
+Your API gateway is now running at `http://localhost:8000`! 🎉
+
+#### Production Deployment with Docker
+```bash
+# Create .env file with your API keys
+cp env_example.txt .env
+# Edit .env
+
+# Deploy with Docker Compose
+docker-compose up -d
+```
+
+#### Why Self-Host?
+- **🔒 Privacy**: Your data never leaves your infrastructure
+- **💰 Cost Control**: No markup on API calls, pay only what providers charge
+- **⚡ Performance**: Lower latency, no shared infrastructure
+- **🔧 Customization**: Modify the code to fit your specific needs
+
+📖 **Complete self-hosting guide**: [SELF_HOSTING_GUIDE.md](SELF_HOSTING_GUIDE.md)
+
+### Option 2: Deploy to Railway (Hosted Service)
 
 1. **Fork this repository**
 
@@ -241,7 +281,7 @@ print(response.content)
 
 4. **Get your API key** from the dashboard
 
-### Option 2: Local Development
+### Option 3: Local Development
 
 1. **Clone and setup**:
    ```bash

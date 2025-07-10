@@ -42,7 +42,48 @@ export default function Quickstart() {
             <li><span className="font-semibold text-purple-200">Use our managed UniLLM service:</span> Sign up, get an API key, and start using the dashboard and unified API instantly. No setup or maintenance required—just pay for what you use.</li>
             <li><span className="font-semibold text-purple-200">Self-host UniLLM:</span> Deploy the open source platform on your own infrastructure for full privacy, compliance, and custom integrations. Perfect for teams and enterprises with special requirements.</li>
           </ul>
-          <p className="text-gray-400">Choose the option that fits your needs. Both offer the same powerful features, unified API, and developer experience.</p>
+          <p className="text-gray-400 mb-4">Choose the option that fits your needs. Both offer the same powerful features, unified API, and developer experience.</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 shadow-xl">
+              <h3 className="text-xl font-bold mb-3 text-purple-200">🚀 Quick Self-Hosting</h3>
+              <p className="text-gray-300 mb-4">Get your own instance running in 5 minutes:</p>
+              <pre className="bg-gray-900/80 rounded p-3 overflow-x-auto text-sm text-green-200 mb-4"><code>{`# Clone and setup
+git clone https://github.com/yourusername/unillm
+cd unillm
+./quick_start.sh
+
+# Or manually:
+cd api_gateway
+pip install -r requirements.txt
+cp env_example.txt .env
+# Edit .env with your API keys
+python main_phase2.py`}</code></pre>
+              <p className="text-gray-400 text-sm">Your API will be available at <code className="text-purple-300">http://localhost:8000</code></p>
+            </div>
+            
+            <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 shadow-xl">
+              <h3 className="text-xl font-bold mb-3 text-purple-200">🐳 Docker Deployment</h3>
+              <p className="text-gray-300 mb-4">Production-ready deployment with Docker:</p>
+              <pre className="bg-gray-900/80 rounded p-3 overflow-x-auto text-sm text-green-200 mb-4"><code>{`# Create .env file
+cp env_example.txt .env
+# Edit with your API keys
+
+# Deploy with Docker Compose
+docker-compose up -d`}</code></pre>
+              <p className="text-gray-400 text-sm">Includes API, frontend, and nginx reverse proxy</p>
+            </div>
+          </div>
+          
+          <div className="mt-6 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-2xl p-6">
+            <h3 className="text-lg font-bold mb-2 text-purple-200">🧪 Test Your Setup</h3>
+            <p className="text-gray-300 mb-3">Verify your self-hosted instance is working:</p>
+            <pre className="bg-gray-900/80 rounded p-3 overflow-x-auto text-sm text-green-200"><code>{`# Test your instance
+python test_self_hosted.py
+
+# Or test a specific URL
+python test_self_hosted.py https://your-domain.com`}</code></pre>
+          </div>
         </section>
         <section className="mb-10">
           <h2 className="text-2xl font-bold mb-2 text-purple-300">API Reference</h2>

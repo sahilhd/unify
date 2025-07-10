@@ -1,0 +1,141 @@
+# UniLLM Self-Hosting Environment Variables
+# Copy this file to .env and fill in your values
+
+# =============================================================================
+# REQUIRED API KEYS
+# =============================================================================
+
+# OpenAI API Key (required for GPT models)
+OPENAI_API_KEY=sk-proj-your-openai-api-key-here
+
+# Anthropic API Key (required for Claude models)
+ANTHROPIC_API_KEY=sk-ant-api03-your-anthropic-api-key-here
+
+# Google Gemini API Key (required for Gemini models)
+GEMINI_API_KEY=your-gemini-api-key-here
+
+# Mistral API Key (required for Mistral models)
+MISTRAL_API_KEY=your-mistral-api-key-here
+
+# Cohere API Key (required for Cohere models)
+COHERE_API_KEY=your-cohere-api-key-here
+
+# =============================================================================
+# SECURITY
+# =============================================================================
+
+# Secret key for JWT tokens and session management
+# Generate a secure random key: python -c "import secrets; print(secrets.token_urlsafe(32))"
+SECRET_KEY=your-secure-secret-key-here-change-this-in-production
+
+# JWT token expiration time (minutes)
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# =============================================================================
+# DATABASE
+# =============================================================================
+
+# SQLite (default, good for development and small deployments)
+DATABASE_URL=sqlite:///data/unillm.db
+
+# PostgreSQL (recommended for production)
+# DATABASE_URL=postgresql://username:password@localhost:5432/unillm
+
+# =============================================================================
+# CORS & FRONTEND
+# =============================================================================
+
+# Allowed CORS origins (comma-separated)
+CORS_ORIGINS=http://localhost:3000,https://your-domain.com
+
+# Frontend URL
+FRONTEND_URL=http://localhost:3000
+
+# =============================================================================
+# RATE LIMITING
+# =============================================================================
+
+# Requests per minute per user
+RATE_LIMIT_PER_MINUTE=60
+
+# Daily token quota per user
+DAILY_QUOTA=10000
+
+# =============================================================================
+# BILLING & CREDITS
+# =============================================================================
+
+# Default credits for new users
+DEFAULT_CREDITS=0.0024
+
+# Minimum credits required for a request
+MIN_CREDITS_FOR_REQUEST=0.001
+
+# =============================================================================
+# ENVIRONMENT
+# =============================================================================
+
+# Environment (development/production)
+ENVIRONMENT=production
+
+# Debug mode (true/false)
+DEBUG=false
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+
+# Log level (DEBUG, INFO, WARNING, ERROR)
+LOG_LEVEL=INFO
+
+# =============================================================================
+# SERVER
+# =============================================================================
+
+# Host to bind to
+HOST=0.0.0.0
+
+# Port to run on
+PORT=8000
+
+# =============================================================================
+# GOOGLE OAUTH (OPTIONAL)
+# =============================================================================
+
+# Google OAuth2 credentials (for "Sign in with Google")
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# =============================================================================
+# STRIPE (OPTIONAL - for hosted billing)
+# =============================================================================
+
+# Stripe keys (only needed if you want billing features)
+STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key
+STRIPE_PUBLISHABLE_KEY=pk_test_your-stripe-publishable-key
+STRIPE_WEBHOOK_SECRET=whsec_your-stripe-webhook-secret
+
+# =============================================================================
+# REDIS (OPTIONAL - for advanced rate limiting)
+# =============================================================================
+
+# Redis URL (optional, for distributed rate limiting)
+# REDIS_URL=redis://localhost:6379/0
+
+# =============================================================================
+# MONITORING (OPTIONAL)
+# =============================================================================
+
+# Sentry DSN for error tracking
+# SENTRY_DSN=https://your-sentry-dsn
+
+# =============================================================================
+# NOTES
+# =============================================================================
+
+# 1. At minimum, you need OPENAI_API_KEY and ANTHROPIC_API_KEY
+# 2. Generate a secure SECRET_KEY for production
+# 3. Update CORS_ORIGINS with your actual frontend domain
+# 4. For production, use PostgreSQL instead of SQLite
+# 5. Consider using Redis for better rate limiting
+# 6. Set up SSL/TLS certificates for HTTPS in production 
