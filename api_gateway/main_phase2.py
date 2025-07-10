@@ -70,7 +70,9 @@ app = FastAPI(
 # Add SessionMiddleware for OAuth support
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.getenv("SESSION_SECRET_KEY", "super-secret-session-key")
+    secret_key=os.getenv("SESSION_SECRET_KEY", "super-secret-session-key"),
+    same_site="none",
+    https_only=True
 )
 
 # Add CORS middleware with environment-specific origins
