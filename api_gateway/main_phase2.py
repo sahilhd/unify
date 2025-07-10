@@ -736,6 +736,9 @@ async def google_callback(request: StarletteRequest, db=Depends(get_db)):
     try:
         token = await oauth.google.authorize_access_token(request)
         logger.info(f"[Google OAuth] Token received: {token}")
+        if 'id_token' not in token:
+            logger.info(f"[Google OAuth] id_token missing from token: {token}")
+            raise HTTPException(status_code=400, detail="Google login failed: id_token missing")
         user_info = await oauth.google.parse_id_token(request, token)
         logger.info(f"[Google OAuth] user_info: {user_info}")
         email = user_info.get('email')
