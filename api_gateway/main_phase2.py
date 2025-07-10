@@ -771,6 +771,11 @@ async def google_callback(request: StarletteRequest, db=Depends(get_db)):
         logger.info(f"[Google OAuth] Exception: {e}")
         raise
 
+@app.get("/test")
+async def test():
+    logger.info("Test endpoint hit")
+    return {"status": "ok"}
+
 
 if __name__ == "__main__":
     import uvicorn
