@@ -149,14 +149,14 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ user, onLogout }) => {
   return (
     <>
       <div className="flex items-center flex-shrink-0 px-4 py-6">
-        <div className="flex items-center">
+        <div className="flex items-center cursor-pointer group" onClick={() => navigate('/')}> 
           <div className="flex-shrink-0">
             <div className="h-8 w-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
               <span className="text-white text-sm font-bold">U</span>
             </div>
           </div>
           <div className="ml-3">
-            <h1 className="text-xl font-semibold text-white">UniLLM</h1>
+            <h1 className="text-xl font-semibold text-white group-hover:text-purple-300 transition-colors">UniLLM</h1>
           </div>
         </div>
       </div>
