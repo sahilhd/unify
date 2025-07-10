@@ -23,6 +23,8 @@ const LoginPage: React.FC = () => {
 
       if (!success) {
         setError(isLogin ? 'Invalid credentials' : 'Registration failed');
+      } else {
+        navigate('/dashboard');
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
