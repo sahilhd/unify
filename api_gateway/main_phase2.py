@@ -704,15 +704,10 @@ oauth.register(
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={
         'scope': 'openid email profile',
-        'redirect_uri': 'https://unify-production-82fc.up.railway.app/auth/google/callback'
     },
 )
 
 logger.info("[Google OAuth] OAuth configuration completed")
-
-# Initialize OAuth with the app
-oauth.init_app(app)
-logger.info("[Google OAuth] OAuth initialized with app")
 
 @app.get("/auth/google/login")
 async def google_login(request: StarletteRequest):
