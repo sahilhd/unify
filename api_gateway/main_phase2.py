@@ -726,6 +726,8 @@ async def google_login(request: StarletteRequest):
 @app.get("/auth/google/callback")
 async def google_callback(request: StarletteRequest, db=Depends(get_db)):
     logger.info("[Google OAuth] Callback endpoint hit")
+    logger.info(f"[Google OAuth] Request URL: {request.url}")
+    logger.info(f"[Google OAuth] Request headers: {dict(request.headers)}")
     try:
         token = await oauth.google.authorize_access_token(request)
         logger.info(f"[Google OAuth] Token received: {token}")
