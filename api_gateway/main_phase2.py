@@ -93,6 +93,9 @@ llm_client = Phase2LLMClient()
 # Create database tables
 create_tables()
 
+# Debug: Check if we reach OAuth configuration
+logger.info("[STARTUP] About to configure OAuth")
+
 # Pydantic models
 class UserCreate(BaseModel):
     email: str
@@ -704,6 +707,7 @@ oauth.register(
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={
         'scope': 'openid email profile',
+        'redirect_uri': 'https://unify-production-82fc.up.railway.app/auth/google/callback'
     },
 )
 
