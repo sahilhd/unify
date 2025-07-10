@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from './Navbar';
 
 const features = [
   {
@@ -28,16 +29,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
   return (
     <div className="bg-gradient-to-b from-gray-900 to-gray-800 min-h-screen flex flex-col">
-      <nav className="flex justify-between items-center px-8 py-6">
-        <div className="text-2xl font-bold text-purple-400 cursor-pointer" onClick={() => navigate('/')}>UniLLM</div>
-        <div className="space-x-6">
-          <button className="text-white hover:text-purple-400" onClick={() => navigate('/features')}>Features</button>
-          <button className="text-white hover:text-purple-400" onClick={() => navigate('/pricing')}>Pricing</button>
-          <button className="text-white hover:text-purple-400" onClick={() => navigate('/quickstart')}>Quickstart</button>
-          <button className="text-white hover:text-purple-400" onClick={() => window.open('https://github.com/sahilhd/unify', '_blank')}>GitHub</button>
-          <button className="ml-4 px-4 py-2 bg-purple-500 hover:bg-purple-600 rounded text-white font-semibold shadow" onClick={() => navigate('/login')}>Login</button>
-        </div>
-      </nav>
+      <Navbar />
       <main className="flex-1 flex flex-col items-center justify-center text-center px-4">
         <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6">Unify Your LLM Experience</h1>
         <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-2xl">A unified API gateway and SDK for all your large language model needs. Simple, scalable, and open source.</p>

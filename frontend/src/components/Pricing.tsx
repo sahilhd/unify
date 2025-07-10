@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from './Navbar';
 
 export default function Pricing() {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col items-center py-16 px-4">
+      <Navbar />
       <h2 className="text-4xl font-extrabold mb-8 text-purple-400">Pricing & Credits</h2>
       <div className="bg-gray-800 rounded-lg p-8 shadow-lg max-w-2xl w-full mb-8">
         <p className="text-lg text-gray-300 mb-4">UniLLM uses a simple, pay-as-you-go credit system. Purchase credits securely with Stripe and use them across all supported LLM providers.</p>

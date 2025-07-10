@@ -1,8 +1,10 @@
 import React from 'react';
+import Navbar from './Navbar';
 
 export default function Quickstart() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col items-center py-12 px-4">
+      <Navbar />
       <div className="max-w-4xl w-full">
         <h1 className="text-4xl font-extrabold mb-6 text-purple-400 text-center">Quickstart</h1>
         <section className="mb-10">
@@ -42,6 +44,16 @@ print(response.content)`}</code></pre>
             <li>Secure authentication (Google OAuth, JWT, API keys)</li>
             <li>Open source and developer-friendly</li>
           </ul>
+        </section>
+
+        <section className="mb-10">
+          <h2 className="text-2xl font-bold mb-2 text-purple-300">Deployment Options: Hosted or Self-Hosted</h2>
+          <p className="mb-4 text-gray-300">UniLLM is designed for maximum flexibility. You can:</p>
+          <ul className="list-disc list-inside text-gray-300 space-y-1 mb-4">
+            <li><span className="font-semibold text-purple-200">Use our managed UniLLM service:</span> Sign up, get an API key, and start using the dashboard and unified API instantly. No setup or maintenance required—just pay for what you use.</li>
+            <li><span className="font-semibold text-purple-200">Self-host UniLLM:</span> Deploy the open source platform on your own infrastructure for full privacy, compliance, and custom integrations. Perfect for teams and enterprises with special requirements.</li>
+          </ul>
+          <p className="text-gray-400">Choose the option that fits your needs. Both offer the same powerful features, unified API, and developer experience.</p>
         </section>
 
         <section className="mb-10">

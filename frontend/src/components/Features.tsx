@@ -1,4 +1,5 @@
 import React from 'react';
+import Navbar from './Navbar';
 
 const features = [
   {
@@ -36,6 +37,7 @@ const features = [
 export default function Features() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col items-center py-16 px-4">
+      <Navbar />
       <h2 className="text-4xl font-extrabold mb-8 text-purple-400">Features</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl w-full">
         {features.map((feature) => (
