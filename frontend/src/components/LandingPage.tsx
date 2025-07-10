@@ -33,7 +33,7 @@ export default function LandingPage() {
         <div className="space-x-6">
           <button className="text-white hover:text-purple-400" onClick={() => navigate('/features')}>Features</button>
           <button className="text-white hover:text-purple-400" onClick={() => navigate('/pricing')}>Pricing</button>
-          <button className="text-white hover:text-purple-400" onClick={() => window.open('https://github.com/your-org/your-repo', '_blank')}>GitHub</button>
+          <button className="text-white hover:text-purple-400" onClick={() => window.open('https://github.com/sahilhd/unify', '_blank')}>GitHub</button>
           <button className="ml-4 px-4 py-2 bg-purple-500 hover:bg-purple-600 rounded text-white font-semibold shadow" onClick={() => navigate('/login')}>Login</button>
         </div>
       </nav>
@@ -42,7 +42,7 @@ export default function LandingPage() {
         <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-2xl">A unified API gateway and SDK for all your large language model needs. Simple, scalable, and open source.</p>
         <div className="flex flex-col md:flex-row gap-4 mb-12">
           <button className="px-8 py-3 bg-purple-500 hover:bg-purple-600 rounded text-lg font-semibold text-white shadow" onClick={() => navigate('/login')}>Get Started</button>
-          <button className="px-8 py-3 bg-gray-700 hover:bg-gray-600 rounded text-lg font-semibold text-white shadow" onClick={() => window.open('https://github.com/your-org/your-repo', '_blank')}>View on GitHub</button>
+          <button className="px-8 py-3 bg-gray-700 hover:bg-gray-600 rounded text-lg font-semibold text-white shadow" onClick={() => window.open('https://github.com/sahilhd/unify', '_blank')}>View on GitHub</button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {features.map((feature) => (
