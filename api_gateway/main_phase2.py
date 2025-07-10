@@ -692,6 +692,9 @@ async def list_models():
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
+logger.info(f"[Google OAuth] Client ID: {GOOGLE_CLIENT_ID[:10]}..." if GOOGLE_CLIENT_ID else "NOT SET")
+logger.info(f"[Google OAuth] Client Secret: {'SET' if GOOGLE_CLIENT_SECRET else 'NOT SET'}")
+
 # Set up Authlib OAuth
 oauth = OAuth()
 oauth.register(
@@ -705,11 +708,25 @@ oauth.register(
     },
 )
 
+logger.info("[Google OAuth] OAuth configuration completed")
+
+# Initialize OAuth with the app
+oauth.init_app(app)
+logger.info("[Google OAuth] OAuth initialized with app")
+
 @app.get("/auth/google/login")
 async def google_login(request: StarletteRequest):
+    logger.info("[Google OAuth] Login endpoint hit")
     # Hardcode the redirect_uri to match Google Cloud Console
     redirect_uri = "https://unify-production-82fc.up.railway.app/auth/google/callback"
-    return await oauth.google.authorize_redirect(request, redirect_uri)
+    logger.info(f"[Google OAuth] Using redirect_uri: {redirect_uri}")
+    try:
+        response = await oauth.google.authorize_redirect(request, redirect_uri)
+        logger.info(f"[Google OAuth] Redirect response: {response}")
+        return response
+    except Exception as e:
+        logger.info(f"[Google OAuth] Login exception: {e}")
+        raise
 
 @app.get("/auth/google/callback")
 async def google_callback(request: StarletteRequest, db=Depends(get_db)):
