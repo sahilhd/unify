@@ -4,6 +4,9 @@ import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginSuccess from './components/LoginSuccess';
+import LandingPage from './components/LandingPage';
+import Features from './components/Features';
+import Pricing from './components/Pricing';
 import './App.css';
 
 function App() {
@@ -29,12 +32,17 @@ function AppContent() {
     );
   }
 
-  // Allow /login-success route even if not authenticated
   return (
     <Routes>
       <Route path="/login-success" element={<LoginSuccess />} />
       {!isAuthenticated ? (
-        <Route path="*" element={<LoginPage />} />
+        <>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/features" element={<Features />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="*" element={<LandingPage />} />
+        </>
       ) : (
         <>
           <Route path="/dashboard/*" element={<Dashboard />} />
