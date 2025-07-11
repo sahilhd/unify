@@ -42,8 +42,16 @@ from unillm import UniLLM
 # Just provide your API key - everything else is pre-configured!
 client = UniLLM(api_key="your-api-key")
 
+# Same code works with any provider!
 response = client.chat(
-    model="gpt-4",
+    model="gpt-4",  # OpenAI
+    messages=[{"role": "user", "content": "Hello! What's 2+2?"}]
+)
+print(response.content)  # "2+2 equals 4."
+
+# Switch to Anthropic with the same code
+response = client.chat(
+    model="claude-3-sonnet",  # Anthropic
     messages=[{"role": "user", "content": "Hello! What's 2+2?"}]
 )
 print(response.content)  # "2+2 equals 4."
@@ -279,7 +287,46 @@ openai.api_base = "https://your-self-hosted-domain.com"  # Your server URL
 
 ## 📚 Complete Examples
 
-### Example 1: Multi-Provider Chat Bot
+### Example 1: Switch Between Providers with Same Code
+```python
+from unillm import UniLLM
+
+client = UniLLM(api_key="your-api-key")
+
+# Same code, different models - UniLLM handles the rest!
+messages = [{"role": "user", "content": "Write a short poem about coding"}]
+
+# Using OpenAI's GPT-4
+response_openai = client.chat(
+    model="gpt-4",
+    messages=messages,
+    max_tokens=100
+)
+print("OpenAI GPT-4:")
+print(response_openai.content)
+print()
+
+# Same code, now using Anthropic's Claude
+response_anthropic = client.chat(
+    model="claude-3-sonnet",
+    messages=messages,
+    max_tokens=100
+)
+print("Anthropic Claude:")
+print(response_anthropic.content)
+print()
+
+# Same code, now using Google's Gemini
+response_gemini = client.chat(
+    model="gemini-pro",
+    messages=messages,
+    max_tokens=100
+)
+print("Google Gemini:")
+print(response_gemini.content)
+```
+
+### Example 2: Multi-Provider Chat Bot
 ```python
 from unillm import UniLLM
 
