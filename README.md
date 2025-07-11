@@ -31,7 +31,7 @@ pip install unifyllm-sdk
 ```
 
 ### 2. Get Your API Key
-1. **Sign up** at [unillm.com](https://unillm.com) (or your deployed frontend URL)
+1. **Sign up** at [https://unillm.com](https://unify-production-82fc.up.railway.app) (or your deployed frontend URL)
 2. **Get your API key** from the dashboard
 3. **Set your API key**: `export UNILLM_API_KEY="your-api-key-here"`
 
