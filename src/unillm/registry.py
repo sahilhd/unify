@@ -105,8 +105,12 @@ class ModelRegistry:
             "gemini-pro": "gemini-1.5-flash",  # Map old gemini-pro to current model
         }
         for alias, canonical in gemini_aliases.items():
-            self.register_model(alias, "gemini")
             self._aliases[alias] = canonical
+            # Also register the alias as a model
+            self._model_to_provider[alias] = "gemini"
+            if "gemini" not in self._provider_models:
+                self._provider_models["gemini"] = set()
+            self._provider_models["gemini"].add(alias)
     
     def resolve_alias(self, model: str) -> str:
         return self._aliases.get(model, model)
