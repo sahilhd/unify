@@ -10,7 +10,7 @@ with open("src/unillm/README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="unifyllm-sdk",
-    version="0.1.3",
+    version="0.1.4",
     author="Sahil Handa",
     author_email="sahilhanda@gmail.com",
     description="Unified Python client for multiple LLM providers (OpenAI, Anthropic, etc.) with drop-in compatibility.",
