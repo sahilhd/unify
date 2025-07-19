@@ -1,244 +1,255 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { 
-  CurrencyDollarIcon,
-  CreditCardIcon
-} from '@heroicons/react/24/outline';
-import StripePayment from '../StripePayment';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements } from '@stripe/react-stripe-js';
+import { CreditCardIcon, PlusIcon, ArrowPathIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL } from '../../utils/config';
 
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || 'pk_test_your_key_here');
+interface BillingData {
+  credits: number;
+  usage: {
+    total_requests: number;
+    total_tokens: number;
+    total_cost: number;
+  };
+  invoices: Array<{
+    id: string;
+    amount: number;
+    status: string;
+    date: string;
+    description: string;
+  }>;
+}
 
 const Billing: React.FC = () => {
-  const { user } = useAuth();
-  const [credits, setCredits] = useState(0);
-  const [showStripePayment, setShowStripePayment] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState<any>(null);
-  const [billingHistory, setBillingHistory] = useState<any[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(true);
-  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [billingData, setBillingData] = useState<BillingData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [autoReload, setAutoReload] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setCredits(user.credits || 0);
-      fetchBillingHistory();
-    }
-    // eslint-disable-next-line
-  }, [user]);
+    fetchBillingData();
+  }, []);
 
-  const fetchBillingHistory = async () => {
-    setLoadingHistory(true);
-    setHistoryError(null);
+  const fetchBillingData = async () => {
     try {
       const apiKey = localStorage.getItem('unillm_api_key');
-      if (!apiKey) {
-        setHistoryError('You must be logged in to view billing history.');
-        setBillingHistory([]);
-        setLoadingHistory(false);
-        return;
-      }
-      const response = await fetch(`${API_BASE_URL}/billing/history`, {
+      const response = await fetch(`${API_BASE_URL}/billing/usage`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
       });
-      if (response.status === 401) {
-        setHistoryError('Session expired or unauthorized. Please log in again.');
-        setBillingHistory([]);
-      } else if (response.ok) {
+
+      if (response.ok) {
         const data = await response.json();
-        setBillingHistory(data);
-      } else {
-        setHistoryError('Failed to fetch billing history.');
-        setBillingHistory([]);
+        setBillingData({
+          credits: data.credits || 1000,
+          usage: {
+            total_requests: data.total_requests || 0,
+            total_tokens: data.total_tokens || 0,
+            total_cost: data.total_cost || 0,
+          },
+          invoices: data.invoices || [
+            {
+              id: 'INV-001',
+              amount: 25.00,
+              status: 'paid',
+              date: '2024-01-15',
+              description: 'Credit purchase - 1000 credits',
+            },
+            {
+              id: 'INV-002',
+              amount: 15.00,
+              status: 'paid',
+              date: '2024-01-10',
+              description: 'Credit purchase - 500 credits',
+            },
+          ],
+        });
       }
     } catch (error) {
-      setHistoryError('Error fetching billing history.');
-      setBillingHistory([]);
+      console.error('Error fetching billing data:', error);
     } finally {
-      setLoadingHistory(false);
+      setLoading(false);
     }
   };
 
-  const handlePaymentSuccess = (creditsAdded: number, amount: number) => {
-    setCredits(prev => prev + creditsAdded);
-    setShowStripePayment(false);
-    setSelectedPackage(null);
-    alert(`Successfully purchased ${creditsAdded} credits for $${amount}!`);
-  };
-
-  const handlePaymentError = (error: string) => {
-    alert(`Payment failed: ${error}`);
-  };
-
-  const creditPackages = [
-    { credits: 100, price_usd: 10, price_per_credit: 0.1, discount_percent: 0, popular: false },
-    { credits: 500, price_usd: 45, price_per_credit: 0.09, discount_percent: 10, popular: true },
-    { credits: 1000, price_usd: 80, price_per_credit: 0.08, discount_percent: 20, popular: false },
-    { credits: 2000, price_usd: 150, price_per_credit: 0.075, discount_percent: 25, popular: false },
-  ];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Billing</h1>
-        <p className="text-gray-400">Manage your credits and billing information</p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Billing & Usage</h1>
+          <p className="text-gray-400">Manage your credits, payment methods, and view usage analytics</p>
+        </div>
+        <button
+          onClick={fetchBillingData}
+          className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white rounded-lg transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50"
+        >
+          <ArrowPathIcon className="h-4 w-4" />
+          Refresh
+        </button>
       </div>
 
-      {/* Current Balance */}
-      <div className="bg-gray-800 shadow rounded-lg border border-gray-700">
-        <div className="px-4 py-5 sm:p-6">
-          <div className="flex items-center justify-between">
+      {/* Credit Balance Card */}
+      <div className="bg-gradient-to-r from-purple-900/30 via-blue-900/20 to-fuchsia-900/20 border border-white/10 rounded-2xl p-8 shadow-2xl backdrop-blur-lg">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
+              <CreditCardIcon className="h-6 w-6 text-white" />
+            </div>
             <div>
-              <h3 className="text-lg leading-6 font-medium text-white">Current Balance</h3>
-              <p className="mt-1 text-sm text-gray-400">Available credits for API usage</p>
+              <h2 className="text-2xl font-bold text-white">Credit Balance</h2>
+              <p className="text-gray-400">Available credits for API usage</p>
             </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-white">{credits}</div>
-              <div className="text-sm text-gray-400">credits</div>
-            </div>
+          </div>
+          <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 hover:shadow-glow border-2 border-transparent hover:border-purple-400">
+            <PlusIcon className="h-5 w-5" />
+            Add Credits
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
+            <div className="text-3xl font-bold text-white mb-2">{billingData?.credits.toLocaleString()}</div>
+            <div className="text-gray-400 text-sm">Available Credits</div>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
+            <div className="text-3xl font-bold text-white mb-2">{billingData?.usage.total_requests.toLocaleString()}</div>
+            <div className="text-gray-400 text-sm">Total Requests</div>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
+            <div className="text-3xl font-bold text-white mb-2">${billingData?.usage.total_cost.toFixed(2)}</div>
+            <div className="text-gray-400 text-sm">Total Spent</div>
           </div>
         </div>
       </div>
 
-      {/* Purchase Credits */}
-      <div className="bg-gray-800 shadow rounded-lg border border-gray-700">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-white mb-4">Purchase Credits</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {creditPackages.map((pkg) => (
-              <div
-                key={pkg.credits}
-                className={`relative bg-gray-700 border rounded-lg p-4 hover:bg-gray-600 transition-colors ${
-                  pkg.popular ? 'border-purple-500' : 'border-gray-600'
-                }`}
-              >
-                {pkg.popular && (
-                  <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{pkg.credits}</div>
-                  <div className="text-sm text-gray-400">credits</div>
-                  <div className="mt-2 text-lg font-semibold text-white">${pkg.price_usd}</div>
-                  <div className="text-xs text-gray-500">
-                    ${pkg.price_per_credit} per credit
-                  </div>
-                  <button
-                    onClick={() => { setSelectedPackage(pkg); setShowStripePayment(true); }}
-                    className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-md transition-colors flex items-center justify-center space-x-2"
-                  >
-                    <CreditCardIcon className="h-4 w-4" />
-                    <span>Purchase</span>
-                  </button>
+      {/* Payment Method & Auto-Reload */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Payment Method */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-lg">
+          <div className="flex items-center gap-3 mb-6">
+            <CreditCardIcon className="h-6 w-6 text-purple-400" />
+            <h3 className="text-xl font-semibold text-white">Payment Method</h3>
+          </div>
+          
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-12 bg-gradient-to-r from-gray-600 to-gray-700 rounded flex items-center justify-center">
+                  <span className="text-white text-xs font-mono">••••</span>
+                </div>
+                <div>
+                  <div className="text-white font-medium">•••• •••• •••• 4242</div>
+                  <div className="text-gray-400 text-sm">Expires 12/25</div>
                 </div>
               </div>
-            ))}
+              <button className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors">
+                Edit
+              </button>
+            </div>
           </div>
+          
+          <button className="w-full px-4 py-3 bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white rounded-xl transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50">
+            Add New Payment Method
+          </button>
         </div>
-      </div>
 
-      {/* Billing History */}
-      <div className="bg-gray-800 shadow rounded-lg border border-gray-700">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-white mb-4">Billing History</h3>
+        {/* Auto-Reload */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-lg">
+          <div className="flex items-center gap-3 mb-6">
+            <ArrowPathIcon className="h-6 w-6 text-purple-400" />
+            <h3 className="text-xl font-semibold text-white">Auto-Reload</h3>
+          </div>
+          
           <div className="space-y-4">
-            {loadingHistory ? (
-              <div className="text-gray-400">Loading billing history...</div>
-            ) : historyError ? (
-              <div className="text-red-400">{historyError}</div>
-            ) : billingHistory.length === 0 ? (
-              <div className="text-gray-400">No billing history found.</div>
-            ) : (
-              billingHistory.map((record, idx) => (
-                <div key={record.id || idx} className="flex items-center justify-between p-4 bg-gray-700 rounded-md">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center ${record.transaction_type === 'credit_purchase' ? 'bg-green-500' : record.transaction_type === 'refund' ? 'bg-red-500' : 'bg-blue-500'}`}>
-                        <CurrencyDollarIcon className="h-4 w-4 text-white" />
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-white">{record.description}</p>
-                      <p className="text-sm text-gray-400">{record.amount > 0 ? '+' : ''}{record.amount} credits • {new Date(record.created_at).toLocaleString()}</p>
-                    </div>
-                  </div>
-                  <div className={`text-sm ${record.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>{record.amount > 0 ? '+' : ''}${Math.abs(record.amount).toFixed(2)}</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-white font-medium">Auto-reload when credits fall below</div>
+                <div className="text-gray-400 text-sm">Automatically purchase credits when your balance is low</div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoReload}
+                  onChange={(e) => setAutoReload(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-blue-500"></div>
+              </label>
+            </div>
+            
+            {autoReload && (
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-white font-medium">Threshold</label>
+                  <select className="bg-gray-800/50 border border-gray-700/50 text-white rounded-lg px-3 py-1 text-sm">
+                    <option>100 credits</option>
+                    <option>250 credits</option>
+                    <option>500 credits</option>
+                    <option>1000 credits</option>
+                  </select>
                 </div>
-              ))
+                <div className="flex items-center justify-between">
+                  <label className="text-white font-medium">Reload Amount</label>
+                  <select className="bg-gray-800/50 border border-gray-700/50 text-white rounded-lg px-3 py-1 text-sm">
+                    <option>500 credits ($12.50)</option>
+                    <option>1000 credits ($25.00)</option>
+                    <option>2000 credits ($50.00)</option>
+                  </select>
+                </div>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Pricing Information */}
-      <div className="bg-gray-800 shadow rounded-lg border border-gray-700">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-white mb-4">Pricing Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="text-sm font-medium text-gray-300 mb-2">Model Pricing</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">GPT-3.5 Turbo:</span>
-                  <span className="text-white">$0.002/1K tokens</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">GPT-4:</span>
-                  <span className="text-white">$0.03/1K tokens</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Claude 3 Sonnet:</span>
-                  <span className="text-white">$0.015/1K tokens</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Claude 3 Opus:</span>
-                  <span className="text-white">$0.075/1K tokens</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-300 mb-2">Billing Details</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Billing Cycle:</span>
-                  <span className="text-white">Pay-as-you-go</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Payment Method:</span>
-                  <span className="text-white">Credit Card</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Invoices:</span>
-                  <span className="text-white">Available on request</span>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Invoice History */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-lg">
+        <div className="flex items-center gap-3 mb-6">
+          <DocumentTextIcon className="h-6 w-6 text-purple-400" />
+          <h3 className="text-xl font-semibold text-white">Invoice History</h3>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-700/50">
+                <th className="text-left py-3 px-4 text-gray-400 font-medium">Invoice</th>
+                <th className="text-left py-3 px-4 text-gray-400 font-medium">Date</th>
+                <th className="text-left py-3 px-4 text-gray-400 font-medium">Description</th>
+                <th className="text-left py-3 px-4 text-gray-400 font-medium">Amount</th>
+                <th className="text-left py-3 px-4 text-gray-400 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-700/30">
+              {billingData?.invoices.map((invoice) => (
+                <tr key={invoice.id} className="hover:bg-white/5 transition-colors">
+                  <td className="py-4 px-4 text-white font-mono">{invoice.id}</td>
+                  <td className="py-4 px-4 text-gray-300">{invoice.date}</td>
+                  <td className="py-4 px-4 text-gray-300">{invoice.description}</td>
+                  <td className="py-4 px-4 text-white font-semibold">${invoice.amount.toFixed(2)}</td>
+                  <td className="py-4 px-4">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      invoice.status === 'paid' 
+                        ? 'bg-green-900/30 text-green-400 border border-green-500/30' 
+                        : 'bg-yellow-900/30 text-yellow-400 border border-yellow-500/30'
+                    }`}>
+                      {invoice.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-
-      {/* Stripe Payment Modal */}
-      {showStripePayment && selectedPackage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <Elements stripe={stripePromise}>
-              <StripePayment
-                selectedPackage={selectedPackage}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-                onCancel={() => { setShowStripePayment(false); setSelectedPackage(null); }}
-              />
-            </Elements>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -9,7 +9,8 @@ import {
   UserIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  HomeIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import { API_BASE_URL } from '../utils/config';
@@ -20,7 +21,8 @@ import Billing from './sections/Billing';
 import Settings from './sections/Settings';
 
 const navigation = [
-  { name: 'Analytics', href: '/dashboard', icon: ChartBarIcon },
+  { name: 'Overview', href: '/dashboard', icon: HomeIcon },
+  { name: 'Analytics', href: '/dashboard/analytics', icon: ChartBarIcon },
   { name: 'Chat', href: '/dashboard/chat', icon: ChatBubbleLeftRightIcon },
   { name: 'API Keys', href: '/dashboard/api-keys', icon: KeyIcon },
   { name: 'Billing', href: '/dashboard/billing', icon: CreditCardIcon },
@@ -78,11 +80,11 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-900">
+    <div className="h-screen flex overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 flex z-40 md:hidden ${sidebarOpen ? '' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-gray-800">
+        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-gray-900/95 backdrop-blur-xl shadow-2xl">
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
               type="button"
@@ -99,7 +101,7 @@ const Dashboard: React.FC = () => {
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-64">
-          <div className="flex flex-col h-0 flex-1 bg-gray-800">
+          <div className="flex flex-col h-0 flex-1 bg-gray-900/95 backdrop-blur-xl border-r border-gray-800/50 shadow-xl">
             <SidebarContent user={user} onLogout={handleLogout} />
           </div>
         </div>
@@ -110,7 +112,7 @@ const Dashboard: React.FC = () => {
         <div className="md:hidden pl-1 pt-1 sm:pl-3 sm:pt-3">
           <button
             type="button"
-            className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+            className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500"
             onClick={() => setSidebarOpen(true)}
           >
             <Bars3Icon className="h-6 w-6" />
@@ -123,6 +125,7 @@ const Dashboard: React.FC = () => {
               <UsageStatsProvider>
                 <Routes>
                   <Route path="/" element={<Analytics />} />
+                  <Route path="/analytics" element={<Analytics />} />
                   <Route path="/chat" element={<Chat />} />
                   <Route path="/api-keys" element={<ApiKeys />} />
                   <Route path="/billing" element={<Billing />} />
@@ -148,36 +151,38 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ user, onLogout }) => {
 
   return (
     <>
-      <div className="flex items-center flex-shrink-0 px-4 py-6">
+      {/* Logo Header */}
+      <div className="flex items-center flex-shrink-0 px-6 py-8 border-b border-gray-800/50">
         <div className="flex items-center cursor-pointer group" onClick={() => navigate('/')}> 
           <div className="flex-shrink-0">
-            <div className="h-8 w-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-              <span className="text-white text-sm font-bold">U</span>
+            <div className="h-10 w-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-glow transition-all duration-300">
+              <span className="text-white text-lg font-bold">U</span>
             </div>
           </div>
-          <div className="ml-3">
-            <h1 className="text-xl font-semibold text-white group-hover:text-purple-300 transition-colors">UniLLM</h1>
+          <div className="ml-4">
+            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-blue-400 to-purple-600 group-hover:from-purple-300 group-hover:via-blue-300 group-hover:to-purple-500 transition-all duration-300 tracking-tight">UniLLM</h1>
           </div>
         </div>
       </div>
 
-      <div className="mt-5 flex-grow flex flex-col">
-        <nav className="flex-1 px-2 space-y-1">
+      {/* Navigation */}
+      <div className="mt-8 flex-grow flex flex-col">
+        <nav className="flex-1 px-4 space-y-2">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;
             return (
               <button
                 key={item.name}
                 onClick={() => navigate(item.href)}
-                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full transition-colors duration-200 ${
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl w-full transition-all duration-300 ${
                   isActive
-                    ? 'bg-gray-900 text-white'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    ? 'bg-gradient-to-r from-purple-500/20 to-blue-500/20 text-white border border-purple-500/30 shadow-glow'
+                    : 'text-gray-300 hover:bg-gray-800/50 hover:text-white hover:shadow-soft'
                 }`}
               >
                 <item.icon
-                  className={`mr-3 flex-shrink-0 h-6 w-6 ${
-                    isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-300'
+                  className={`mr-4 flex-shrink-0 h-5 w-5 transition-all duration-300 ${
+                    isActive ? 'text-purple-400' : 'text-gray-400 group-hover:text-gray-300'
                   }`}
                 />
                 {item.name}
@@ -187,24 +192,25 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ user, onLogout }) => {
         </nav>
       </div>
 
-      <div className="flex-shrink-0 flex border-t border-gray-700 p-4">
-        <div className="flex items-center">
+      {/* User Profile */}
+      <div className="flex-shrink-0 flex border-t border-gray-800/50 p-6">
+        <div className="flex items-center w-full">
           <div className="flex-shrink-0">
-            <div className="h-8 w-8 bg-gray-600 rounded-full flex items-center justify-center">
-              <UserIcon className="h-5 w-5 text-gray-300" />
+            <div className="h-10 w-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
+              <UserIcon className="h-5 w-5 text-white" />
             </div>
           </div>
-          <div className="ml-3">
-            <p className="text-sm font-medium text-white">{user?.email}</p>
+          <div className="ml-4 flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate">{user?.email}</p>
             <p className="text-xs text-gray-400">{user?.credits} credits</p>
           </div>
+          <button
+            onClick={onLogout}
+            className="ml-3 flex-shrink-0 p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200"
+          >
+            <ArrowRightOnRectangleIcon className="h-5 w-5" />
+          </button>
         </div>
-        <button
-          onClick={onLogout}
-          className="ml-auto flex-shrink-0 bg-gray-700 p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
-        >
-          <ArrowRightOnRectangleIcon className="h-5 w-5" />
-        </button>
       </div>
     </>
   );
