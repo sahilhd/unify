@@ -818,8 +818,21 @@ async def google_callback(request: StarletteRequest, db=Depends(get_db)):
 
 @app.get("/test")
 async def test():
+    """Test endpoint to check environment variables"""
     logger.info("Test endpoint hit")
-    return {"status": "ok"}
+    gemini_key = os.getenv('GEMINI_API_KEY')
+    openai_key = os.getenv('OPENAI_API_KEY')
+    anthropic_key = os.getenv('ANTHROPIC_API_KEY')
+    
+    return {
+        "status": "ok",
+        "environment_variables": {
+            "GEMINI_API_KEY": "SET" if gemini_key else "NOT_SET",
+            "OPENAI_API_KEY": "SET" if openai_key else "NOT_SET", 
+            "ANTHROPIC_API_KEY": "SET" if anthropic_key else "NOT_SET",
+        },
+        "gemini_key_preview": gemini_key[:10] + "..." if gemini_key else None
+    }
 
 # API Key Management endpoints
 class ApiKeyCreate(BaseModel):
