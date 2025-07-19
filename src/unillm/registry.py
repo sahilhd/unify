@@ -49,6 +49,8 @@ class ModelRegistry:
             "gemini-pro-vision",
             "gemini-1.5-pro",
             "gemini-1.5-flash",
+            "gemini-1.5-pro-latest",
+            "gemini-1.5-flash-latest",
         }
         
         # Mistral models
@@ -92,6 +94,15 @@ class ModelRegistry:
         }
         for alias, canonical in anthropic_aliases.items():
             self.register_model(alias, "anthropic")
+            self._aliases[alias] = canonical
+        
+        # Add aliases for Gemini models
+        gemini_aliases = {
+            "gemini": "gemini-pro",  # Default to gemini-pro
+            "gemini-1.5": "gemini-1.5-pro",  # Default to pro version
+        }
+        for alias, canonical in gemini_aliases.items():
+            self.register_model(alias, "gemini")
             self._aliases[alias] = canonical
     
     def resolve_alias(self, model: str) -> str:

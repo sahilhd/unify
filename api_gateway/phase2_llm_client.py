@@ -33,7 +33,7 @@ class Phase2LLMClient:
         self.api_keys = {
             "openai": os.getenv("OPENAI_API_KEY"),
             "anthropic": os.getenv("ANTHROPIC_API_KEY"),
-            "gemini": os.getenv("GOOGLE_API_KEY"),
+            "gemini": os.getenv("GEMINI_API_KEY"),  # Fixed: was GOOGLE_API_KEY
             "mistral": os.getenv("MISTRAL_API_KEY"),
             "cohere": os.getenv("COHERE_API_KEY"),
         }

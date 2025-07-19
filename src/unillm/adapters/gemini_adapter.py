@@ -51,13 +51,14 @@ class GeminiAdapter(BaseAdapter):
                 headers=headers,
                 json=payload,
                 timeout=self.timeout,
-                params={"key": self.api_key},
+                params={"key": self.api_key},  # Gemini uses API key as query parameter
             )
             
             if response.status_code != 200:
+                error_data = response.json() if response.content else {}
                 raise handle_http_error(
                     response.status_code,
-                    response.json(),
+                    error_data,
                     provider="gemini",
                 )
             
@@ -100,13 +101,14 @@ class GeminiAdapter(BaseAdapter):
                 json=payload,
                 timeout=self.timeout,
                 stream=True,
-                params={"key": self.api_key},
+                params={"key": self.api_key},  # Gemini uses API key as query parameter
             )
             
             if response.status_code != 200:
+                error_data = response.json() if response.content else {}
                 raise handle_http_error(
                     response.status_code,
-                    response.json(),
+                    error_data,
                     provider="gemini",
                 )
             
@@ -162,7 +164,18 @@ class GeminiAdapter(BaseAdapter):
         model: str,
     ) -> ChatResponse:
         """Convert Gemini response to UniLLM format."""
+        if not response_data.get("candidates"):
+            raise NetworkError("No candidates in Gemini response", provider="gemini")
+        
         candidate = response_data["candidates"][0]
+        
+        # Handle potential errors in the response
+        if "finishReason" in candidate and candidate["finishReason"] == "SAFETY":
+            raise NetworkError("Gemini safety filter triggered", provider="gemini")
+        
+        if "content" not in candidate or "parts" not in candidate["content"]:
+            raise NetworkError("Invalid response format from Gemini", provider="gemini")
+        
         content = candidate["content"]["parts"][0]["text"]
         
         usage_data = response_data.get("usageMetadata", {})
@@ -200,4 +213,11 @@ class GeminiAdapter(BaseAdapter):
             usage=TokenUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0),
             finish_reason=candidate.get("finishReason"),
             created_at=datetime.now(),
-        ) 
+        )
+    
+    def _get_headers(self) -> Dict[str, str]:
+        """Get headers for Gemini API requests."""
+        # Gemini doesn't use Authorization header, it uses API key as query parameter
+        return {
+            "Content-Type": "application/json",
+        } 
