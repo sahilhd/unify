@@ -45,12 +45,14 @@ class ModelRegistry:
         
         # Google Gemini models
         gemini_models = {
-            "gemini-pro",
-            "gemini-pro-vision",
             "gemini-1.5-pro",
             "gemini-1.5-flash",
             "gemini-1.5-pro-latest",
             "gemini-1.5-flash-latest",
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-001",
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
         }
         
         # Mistral models
@@ -98,8 +100,9 @@ class ModelRegistry:
         
         # Add aliases for Gemini models
         gemini_aliases = {
-            "gemini": "gemini-pro",  # Default to gemini-pro
-            "gemini-1.5": "gemini-1.5-pro",  # Default to pro version
+            "gemini": "gemini-1.5-flash",  # Default to gemini-1.5-flash (faster and cheaper)
+            "gemini-1.5": "gemini-1.5-flash",  # Default to flash version
+            "gemini-pro": "gemini-1.5-flash",  # Map old gemini-pro to current model
         }
         for alias, canonical in gemini_aliases.items():
             self.register_model(alias, "gemini")
