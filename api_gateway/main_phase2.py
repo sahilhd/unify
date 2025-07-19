@@ -781,6 +781,111 @@ async def test():
     logger.info("Test endpoint hit")
     return {"status": "ok"}
 
+# API Key Management endpoints
+class ApiKeyCreate(BaseModel):
+    name: str
+
+class ApiKeyResponse(BaseModel):
+    id: str
+    name: str
+    key: str
+    created_at: str
+    last_used: Optional[str] = None
+    is_active: bool
+
+@app.get("/api-keys", response_model=List[ApiKeyResponse])
+async def get_api_keys(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db=Depends(get_db)
+):
+    """Get all API keys for the current user"""
+    token = credentials.credentials
+    
+    # Get current user
+    try:
+        if is_jwt(token):
+            current_user = get_current_user_jwt(credentials, db)
+        else:
+            current_user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    # For now, return the user's main API key as a single key
+    # In the future, this could be extended to support multiple API keys per user
+    return [ApiKeyResponse(
+        id="1",
+        name="Primary API Key",
+        key=current_user.api_key,
+        created_at=current_user.created_at.isoformat(),
+        last_used=None,  # Could be tracked in the future
+        is_active=current_user.is_active
+    )]
+
+@app.post("/api-keys", response_model=ApiKeyResponse)
+async def create_api_key(
+    key_data: ApiKeyCreate,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db=Depends(get_db)
+):
+    """Create a new API key for the current user"""
+    token = credentials.credentials
+    
+    # Get current user
+    try:
+        if is_jwt(token):
+            current_user = get_current_user_jwt(credentials, db)
+        else:
+            current_user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    # Generate new API key
+    new_api_key = generate_api_key()
+    
+    # Update user's API key (for now, we only support one key per user)
+    # In the future, this could be extended to support multiple keys
+    current_user.api_key = new_api_key
+    db.commit()
+    db.refresh(current_user)
+    
+    return ApiKeyResponse(
+        id="1",
+        name=key_data.name,
+        key=new_api_key,
+        created_at=current_user.updated_at.isoformat(),
+        last_used=None,
+        is_active=current_user.is_active
+    )
+
+@app.delete("/api-keys/{key_id}")
+async def delete_api_key(
+    key_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db=Depends(get_db)
+):
+    """Delete an API key (currently only supports the primary key)"""
+    token = credentials.credentials
+    
+    # Get current user
+    try:
+        if is_jwt(token):
+            current_user = get_current_user_jwt(credentials, db)
+        else:
+            current_user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    # For now, we only support one API key per user
+    # In the future, this could be extended to support multiple keys
+    if key_id == "1":
+        # Generate a new API key to replace the current one
+        new_api_key = generate_api_key()
+        current_user.api_key = new_api_key
+        db.commit()
+        return {"message": "API key regenerated successfully"}
+    else:
+        raise HTTPException(status_code=404, detail="API key not found")
+
 
 if __name__ == "__main__":
     import uvicorn

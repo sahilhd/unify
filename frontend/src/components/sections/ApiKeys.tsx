@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { KeyIcon, PlusIcon, EyeIcon, EyeSlashIcon, ClipboardDocumentIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { KeyIcon, PlusIcon, EyeIcon, EyeSlashIcon, ClipboardDocumentIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL } from '../../utils/config';
 
 interface ApiKey {
@@ -18,6 +18,7 @@ const ApiKeys: React.FC = () => {
   const [newKeyName, setNewKeyName] = useState('');
   const [showKeys, setShowKeys] = useState<{ [key: string]: boolean }>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchApiKeys();
@@ -25,7 +26,14 @@ const ApiKeys: React.FC = () => {
 
   const fetchApiKeys = async () => {
     try {
+      setError(null);
       const apiKey = localStorage.getItem('unillm_api_key');
+      if (!apiKey) {
+        setError('No API key found. Please log in first.');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/api-keys`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -35,26 +43,15 @@ const ApiKeys: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setApiKeys(data.api_keys || [
-          {
-            id: '1',
-            name: 'Production API Key',
-            key: 'unillm_prod_sk_1234567890abcdef',
-            created_at: '2024-01-15T10:30:00Z',
-            last_used: '2024-01-20T14:22:00Z',
-            is_active: true,
-          },
-          {
-            id: '2',
-            name: 'Development API Key',
-            key: 'unillm_dev_sk_abcdef1234567890',
-            created_at: '2024-01-10T09:15:00Z',
-            is_active: true,
-          },
-        ]);
+        setApiKeys(data);
+      } else if (response.status === 401) {
+        setError('Authentication failed. Please log in again.');
+      } else {
+        setError('Failed to fetch API keys. Please try again.');
       }
     } catch (error) {
       console.error('Error fetching API keys:', error);
+      setError('Network error. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -64,6 +61,7 @@ const ApiKeys: React.FC = () => {
     if (!newKeyName.trim()) return;
 
     try {
+      setError(null);
       const apiKey = localStorage.getItem('unillm_api_key');
       const response = await fetch(`${API_BASE_URL}/api-keys`, {
         method: 'POST',
@@ -76,21 +74,29 @@ const ApiKeys: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setApiKeys(prev => [...prev, data.api_key]);
+        // Update the API key in localStorage
+        localStorage.setItem('unillm_api_key', data.key);
+        // Refresh the list
+        await fetchApiKeys();
         setNewKeyName('');
         setShowNewKeyModal(false);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to create API key.');
       }
     } catch (error) {
       console.error('Error creating API key:', error);
+      setError('Network error. Please try again.');
     }
   };
 
-  const deleteApiKey = async (keyId: string) => {
-    if (!window.confirm('Are you sure you want to delete this API key? This action cannot be undone.')) {
+  const regenerateApiKey = async (keyId: string) => {
+    if (!window.confirm('Are you sure you want to regenerate this API key? The old key will no longer work.')) {
       return;
     }
 
     try {
+      setError(null);
       const apiKey = localStorage.getItem('unillm_api_key');
       const response = await fetch(`${API_BASE_URL}/api-keys/${keyId}`, {
         method: 'DELETE',
@@ -101,10 +107,28 @@ const ApiKeys: React.FC = () => {
       });
 
       if (response.ok) {
-        setApiKeys(prev => prev.filter(key => key.id !== keyId));
+        // Fetch the updated API key
+        await fetchApiKeys();
+        // Update localStorage with the new key
+        const newResponse = await fetch(`${API_BASE_URL}/api-keys`, {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (newResponse.ok) {
+          const keys = await newResponse.json();
+          if (keys.length > 0) {
+            localStorage.setItem('unillm_api_key', keys[0].key);
+          }
+        }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to regenerate API key.');
       }
     } catch (error) {
-      console.error('Error deleting API key:', error);
+      console.error('Error regenerating API key:', error);
+      setError('Network error. Please try again.');
     }
   };
 
@@ -115,6 +139,7 @@ const ApiKeys: React.FC = () => {
       setTimeout(() => setCopiedKey(null), 2000);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
+      setError('Failed to copy to clipboard. Please copy manually.');
     }
   };
 
@@ -156,9 +181,20 @@ const ApiKeys: React.FC = () => {
           className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 hover:shadow-glow border-2 border-transparent hover:border-purple-400"
         >
           <PlusIcon className="h-5 w-5" />
-          Create New Key
+          Regenerate Key
         </button>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 flex items-center gap-3">
+          <ExclamationTriangleIcon className="h-5 w-5 text-red-400 flex-shrink-0" />
+          <div>
+            <p className="text-red-400 font-medium">Error</p>
+            <p className="text-red-300 text-sm">{error}</p>
+          </div>
+        </div>
+      )}
 
       {/* API Keys List */}
       <div className="bg-white/5 border border-white/10 rounded-2xl backdrop-blur-lg overflow-hidden">
@@ -167,13 +203,13 @@ const ApiKeys: React.FC = () => {
             <div className="h-16 w-16 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <KeyIcon className="h-8 w-8 text-purple-400" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No API keys yet</h3>
-            <p className="text-gray-400 mb-6">Create your first API key to start using the UniLLM API</p>
+            <h3 className="text-xl font-semibold text-white mb-2">No API keys found</h3>
+            <p className="text-gray-400 mb-6">Please log in to access your API keys</p>
             <button
-              onClick={() => setShowNewKeyModal(true)}
+              onClick={() => window.location.href = '/login'}
               className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 hover:shadow-glow"
             >
-              Create API Key
+              Go to Login
             </button>
           </div>
         ) : (
@@ -238,8 +274,9 @@ const ApiKeys: React.FC = () => {
                     </td>
                     <td className="py-4 px-6 text-right">
                       <button
-                        onClick={() => deleteApiKey(apiKey.id)}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-all duration-200"
+                        onClick={() => regenerateApiKey(apiKey.id)}
+                        className="p-2 text-orange-400 hover:text-orange-300 hover:bg-orange-900/20 rounded-lg transition-all duration-200"
+                        title="Regenerate API Key"
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>
@@ -262,21 +299,34 @@ const ApiKeys: React.FC = () => {
             <h3 className="text-lg font-semibold text-white mb-2">Security Best Practices</h3>
             <ul className="text-gray-300 space-y-1 text-sm">
               <li>• Keep your API keys secure and never share them publicly</li>
-              <li>• Use different keys for different environments (development, staging, production)</li>
-              <li>• Rotate your keys regularly and delete unused keys</li>
+              <li>• Regenerate your key immediately if you suspect it has been compromised</li>
+              <li>• Use environment variables to store API keys in your applications</li>
               <li>• Monitor your API usage to detect any unauthorized access</li>
             </ul>
           </div>
         </div>
       </div>
 
-      {/* Create New Key Modal */}
+      {/* Regenerate Key Modal */}
       {showNewKeyModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-gray-900/95 border border-white/10 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-            <h2 className="text-2xl font-bold text-white mb-6">Create New API Key</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Regenerate API Key</h2>
             
             <div className="space-y-4">
+              <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-yellow-400 font-medium mb-1">Warning</p>
+                    <p className="text-yellow-300 text-sm">
+                      Regenerating your API key will invalidate the current key. 
+                      Any applications using the old key will stop working immediately.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Key Name
@@ -296,7 +346,7 @@ const ApiKeys: React.FC = () => {
                   disabled={!newKeyName.trim()}
                   className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200"
                 >
-                  Create Key
+                  Regenerate Key
                 </button>
                 <button
                   onClick={() => {
