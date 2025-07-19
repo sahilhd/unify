@@ -604,6 +604,46 @@ async def refund_payment(
     result = PaymentProcessor.refund_payment(db, payment_intent_id, reason)
     return result
 
+# Simple credit purchase endpoint (for testing)
+@app.post("/billing/add-credits")
+async def add_credits_direct(
+    request: CreditPurchase,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db=Depends(get_db)
+):
+    """Add credits directly (for testing purposes)"""
+    token = credentials.credentials
+    
+    # Get current user
+    try:
+        if is_jwt(token):
+            current_user = get_current_user_jwt(credentials, db)
+        else:
+            current_user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    # Add credits to user account (convert float to Decimal)
+    current_user.credits += Decimal(str(request.amount))
+    
+    # Log billing transaction
+    billing_record = BillingHistory(
+        user_id=current_user.id,
+        amount=request.amount,
+        description=f"Credit purchase via {request.payment_method}",
+        transaction_type="credit_purchase"
+    )
+    
+    db.add(billing_record)
+    db.commit()
+    db.refresh(current_user)
+    
+    return {
+        "message": "Credits added successfully",
+        "credits_added": request.amount,
+        "new_balance": float(current_user.credits)
+    }
+
 # Admin endpoints
 @app.get("/admin/users")
 async def get_all_users(

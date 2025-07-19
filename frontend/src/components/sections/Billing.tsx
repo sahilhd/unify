@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCardIcon, PlusIcon, ArrowPathIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL } from '../../utils/config';
+import CreditPurchase from '../CreditPurchase';
 
 interface BillingData {
   credits: number;
@@ -22,6 +23,7 @@ const Billing: React.FC = () => {
   const [billingData, setBillingData] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [autoReload, setAutoReload] = useState(false);
+  const [showCreditPurchase, setShowCreditPurchase] = useState(false);
 
   useEffect(() => {
     fetchBillingData();
@@ -71,6 +73,29 @@ const Billing: React.FC = () => {
     }
   };
 
+  const handleCreditPurchaseSuccess = (creditsAdded: number, amount: number) => {
+    // Update the billing data with new credits
+    if (billingData) {
+      setBillingData({
+        ...billingData,
+        credits: billingData.credits + creditsAdded,
+        invoices: [
+          {
+            id: `INV-${Date.now()}`,
+            amount: amount,
+            status: 'paid',
+            date: new Date().toISOString().split('T')[0],
+            description: `Credit purchase - ${creditsAdded} credits`,
+          },
+          ...billingData.invoices,
+        ],
+      });
+    }
+    
+    // Show success message
+    alert(`Successfully purchased ${creditsAdded} credits for $${amount}!`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -108,7 +133,10 @@ const Billing: React.FC = () => {
               <p className="text-gray-400">Available credits for API usage</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 hover:shadow-glow border-2 border-transparent hover:border-purple-400">
+          <button 
+            onClick={() => setShowCreditPurchase(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 hover:shadow-glow border-2 border-transparent hover:border-purple-400"
+          >
             <PlusIcon className="h-5 w-5" />
             Add Credits
           </button>
@@ -250,6 +278,14 @@ const Billing: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Credit Purchase Modal */}
+      {showCreditPurchase && (
+        <CreditPurchase
+          onClose={() => setShowCreditPurchase(false)}
+          onSuccess={handleCreditPurchaseSuccess}
+        />
+      )}
     </div>
   );
 };
