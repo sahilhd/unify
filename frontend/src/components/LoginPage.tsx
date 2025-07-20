@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
+import { CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -10,25 +11,42 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const { login, register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const success = isLogin 
-        ? await login(email, password)
-        : await register(email, password);
-
-      if (!success) {
-        setError(isLogin ? 'Invalid credentials' : 'Registration failed');
+      if (isLogin) {
+        const success = await login(email, password);
+        if (!success) {
+          setError('Invalid credentials');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
-        navigate('/dashboard');
+        // Registration
+        const success = await register(email, password);
+        if (success) {
+          setSuccess('Account created successfully! Please check your email for a verification link to activate your account.');
+          // Clear form after successful registration
+          setEmail('');
+          setPassword('');
+        } else {
+          setError('Registration failed. Please try again.');
+        }
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      // Handle specific error messages from the backend
+      if (err.message && err.message.includes('verify your email')) {
+        setError('Please verify your email address before logging in. Check your inbox for a verification link.');
+      } else {
+        setError('An error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -93,8 +111,16 @@ const LoginPage: React.FC = () => {
             </div>
 
             {error && (
-              <div className="bg-red-900/20 border border-red-500/50 rounded-md p-3">
+              <div className="flex items-center bg-red-900/20 border border-red-500/50 rounded-md p-3">
+                <ExclamationCircleIcon className="h-5 w-5 text-red-400 mr-2" />
                 <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+
+            {success && (
+              <div className="flex items-center bg-green-900/20 border border-green-500/50 rounded-md p-3">
+                <CheckCircleIcon className="h-5 w-5 text-green-400 mr-2" />
+                <p className="text-green-400 text-sm">{success}</p>
               </div>
             )}
 
@@ -113,7 +139,11 @@ const LoginPage: React.FC = () => {
             <div className="text-center">
               <button
                 type="button"
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError('');
+                  setSuccess('');
+                }}
                 className="text-sm text-gray-400 hover:text-white transition-colors duration-200"
               >
                 {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}

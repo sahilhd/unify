@@ -39,6 +39,7 @@ from auth import (
 )
 from middleware import RateLimitMiddleware, UsageTrackingMiddleware, CreditCheckMiddleware
 from payment_processor import PaymentProcessor, WebhookHandler
+from email_service import email_service
 
 # Import the custom Phase 2 LLM client
 from phase2_llm_client import Phase2LLMClient
@@ -115,6 +116,7 @@ class UserResponse(BaseModel):
     rate_limit_per_minute: int
     daily_quota: int
     is_active: bool
+    email_verified: bool
     created_at: str
 
 class ChatRequest(BaseModel):
@@ -190,7 +192,7 @@ async def register_user(user_data: UserCreate, db=Depends(get_db)):
             detail="Email already registered"
         )
     
-    # Create new user
+    # Create new user (initially inactive until email verification)
     api_key = generate_api_key()
     hashed_password = get_password_hash(user_data.password)
     
@@ -200,12 +202,34 @@ async def register_user(user_data: UserCreate, db=Depends(get_db)):
         api_key=api_key,
         credits=DEFAULT_CREDITS,  # Use config value
         rate_limit_per_minute=RATE_LIMIT_PER_MINUTE,
-        daily_quota=DAILY_QUOTA
+        daily_quota=DAILY_QUOTA,
+        is_active=False,  # User must verify email before activation
+        email_verified=False
     )
     
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    
+    # Send verification email immediately after registration
+    try:
+        verification_token = create_access_token(
+            data={"sub": new_user.email, "type": "email_verification"},
+            expires_delta=timedelta(hours=24)
+        )
+        
+        verification_url = f"https://unillm-frontend.railway.app/verify-email?token={verification_token}"
+        
+        # Send verification email using email service
+        email_sent = email_service.send_verification_email(new_user.email, verification_url)
+        
+        if email_sent:
+            logger.info(f"Verification email sent to {new_user.email}")
+        else:
+            logger.error(f"Failed to send verification email to {new_user.email}")
+        
+    except Exception as e:
+        logger.error(f"Error sending verification email during registration: {str(e)}")
     
     return UserResponse(
         id=new_user.id,
@@ -215,6 +239,7 @@ async def register_user(user_data: UserCreate, db=Depends(get_db)):
         rate_limit_per_minute=new_user.rate_limit_per_minute,
         daily_quota=new_user.daily_quota,
         is_active=new_user.is_active,
+        email_verified=new_user.email_verified,
         created_at=new_user.created_at.isoformat()
     )
 
@@ -226,6 +251,20 @@ async def login_user(user_data: UserLogin, db=Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
+        )
+    
+    # Check if email is verified
+    if not user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Please verify your email address before logging in. Check your inbox for a verification link."
+        )
+    
+    # Check if account is active
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Account is disabled. Please contact support."
         )
     
     access_token = create_access_token(data={"sub": user.email})
@@ -264,6 +303,7 @@ async def get_current_user_info(
                         rate_limit_per_minute=user.rate_limit_per_minute,
                         daily_quota=user.daily_quota,
                         is_active=user.is_active,
+                        email_verified=user.email_verified,
                         created_at=user.created_at.isoformat()
                     )
         
@@ -278,6 +318,7 @@ async def get_current_user_info(
                 rate_limit_per_minute=user.rate_limit_per_minute,
                 daily_quota=user.daily_quota,
                 is_active=user.is_active,
+                email_verified=user.email_verified,
                 created_at=user.created_at.isoformat()
             )
     except Exception as e:
@@ -879,18 +920,21 @@ async def send_verification_email(
             expires_delta=timedelta(hours=24)
         )
         
-        # In a real implementation, you would send an email here
-        # For now, we'll just return the token (in production, send via email service)
         verification_url = f"https://unillm-frontend.railway.app/verify-email?token={verification_token}"
         
-        # TODO: Integrate with email service (SendGrid, AWS SES, etc.)
-        logger.info(f"Verification email would be sent to {current_user.email}")
-        logger.info(f"Verification URL: {verification_url}")
+        # Send verification email using email service
+        email_sent = email_service.send_verification_email(current_user.email, verification_url)
         
-        return {
-            "message": "Verification email sent successfully",
-            "verification_url": verification_url  # Remove this in production
-        }
+        if email_sent:
+            return {
+                "message": "Verification email sent successfully",
+                "verification_url": verification_url  # Remove this in production
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send verification email"
+            )
         
     except Exception as e:
         logger.error(f"Error sending verification email: {str(e)}")
@@ -922,12 +966,19 @@ async def verify_email(
                 detail="User not found"
             )
         
-        # Mark email as verified (you might want to add an email_verified field to User model)
-        # For now, we'll just return success
+        # Mark email as verified and activate account
+        user.email_verified = True
+        user.is_active = True
         user.updated_at = datetime.utcnow()
         db.commit()
         
-        return {"message": "Email verified successfully"}
+        # Send welcome email
+        try:
+            email_service.send_welcome_email(user.email)
+        except Exception as e:
+            logger.error(f"Failed to send welcome email to {user.email}: {str(e)}")
+        
+        return {"message": "Email verified successfully! Your account is now active."}
         
     except Exception as e:
         db.rollback()
@@ -1041,6 +1092,57 @@ async def delete_api_key(
         return {"message": "API key regenerated successfully"}
     else:
         raise HTTPException(status_code=404, detail="API key not found")
+
+@app.post("/auth/resend-verification")
+async def resend_verification_email(
+    user_data: UserLogin,
+    db=Depends(get_db)
+):
+    """Resend verification email for unverified users"""
+    try:
+        # Authenticate user
+        user = authenticate_user(db, user_data.email, user_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+        
+        # Check if email is already verified
+        if user.email_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is already verified"
+            )
+        
+        # Generate verification token
+        verification_token = create_access_token(
+            data={"sub": user.email, "type": "email_verification"},
+            expires_delta=timedelta(hours=24)
+        )
+        
+        verification_url = f"https://unillm-frontend.railway.app/verify-email?token={verification_token}"
+        
+        # Send verification email using email service
+        email_sent = email_service.send_verification_email(user.email, verification_url)
+        
+        if email_sent:
+            return {
+                "message": "Verification email sent successfully",
+                "verification_url": verification_url  # Remove this in production
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send verification email"
+            )
+        
+    except Exception as e:
+        logger.error(f"Error resending verification email: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send verification email"
+        )
 
 @app.get("/test")
 async def test():

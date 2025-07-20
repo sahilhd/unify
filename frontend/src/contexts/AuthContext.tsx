@@ -9,6 +9,7 @@ interface User {
   rate_limit_per_minute: number;
   daily_quota: number;
   is_active: boolean;
+  email_verified: boolean;
   created_at: string;
 }
 
@@ -97,11 +98,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         const errorData = await response.json();
         console.error('Login failed:', errorData);
-        return false;
+        // Throw error with message for better error handling in UI
+        throw new Error(errorData.detail || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
-      return false;
+      throw error; // Re-throw to let UI handle the error
     }
   };
 
@@ -119,8 +121,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.ok) {
         const data = await response.json();
         console.log('Registration response:', data);
-        localStorage.setItem('unillm_api_key', data.api_key);
-        setUser(data);
+        // Don't automatically log in the user - they need to verify email first
+        // localStorage.setItem('unillm_api_key', data.api_key);
+        // setUser(data);
         return true;
       } else {
         const errorData = await response.json();
