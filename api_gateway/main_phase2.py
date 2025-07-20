@@ -96,6 +96,59 @@ llm_client = Phase2LLMClient()
 # Create database tables
 create_tables()
 
+# Run database migration to add email_verified column if it doesn't exist
+def run_database_migration():
+    """Run database migration to add email_verified column if it doesn't exist"""
+    try:
+        from sqlalchemy import create_engine, text
+        
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            logger.warning("DATABASE_URL not found, skipping migration")
+            return
+        
+        # Handle PostgreSQL URL format for Railway
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
+        
+        engine = create_engine(database_url)
+        
+        with engine.connect() as connection:
+            # Check if column already exists
+            result = connection.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'email_verified'
+            """))
+            
+            if result.fetchone():
+                logger.info("email_verified column already exists")
+                return
+            
+            # Add the email_verified column
+            logger.info("Adding email_verified column to users table...")
+            connection.execute(text("""
+                ALTER TABLE users 
+                ADD COLUMN email_verified BOOLEAN DEFAULT FALSE
+            """))
+            
+            # Update existing users to have email_verified = true (for backward compatibility)
+            logger.info("Updating existing users to have email_verified = true...")
+            connection.execute(text("""
+                UPDATE users 
+                SET email_verified = true 
+                WHERE email_verified IS NULL
+            """))
+            
+            connection.commit()
+            logger.info("Database migration completed successfully!")
+            
+    except Exception as e:
+        logger.error(f"Database migration failed: {str(e)}")
+
+# Run migration
+run_database_migration()
+
 # Debug: Check if we reach OAuth configuration
 logger.info("[STARTUP] About to configure OAuth")
 
