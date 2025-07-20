@@ -6,6 +6,9 @@ interface User {
   email: string;
   api_key: string;
   credits: number;
+  rate_limit_per_minute: number;
+  daily_quota: number;
+  is_active: boolean;
   created_at: string;
 }
 

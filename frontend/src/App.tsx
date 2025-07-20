@@ -8,6 +8,7 @@ import LandingPage from './components/LandingPage';
 import Features from './components/Features';
 import Pricing from './components/Pricing';
 import Quickstart from './components/Quickstart';
+import EmailVerification from './components/EmailVerification';
 import './App.css';
 
 function App() {
@@ -36,6 +37,7 @@ function AppContent() {
   return (
     <Routes>
       <Route path="/login-success" element={<LoginSuccess />} />
+      <Route path="/verify-email" element={<EmailVerification />} />
       {!isAuthenticated ? (
         <>
           <Route path="/" element={<LandingPage />} />

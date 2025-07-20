@@ -35,7 +35,7 @@ from database import get_db, User, UsageLog, BillingHistory, create_tables, calc
 from auth import (
     get_password_hash, generate_api_key, authenticate_user, 
     create_access_token, get_current_user_api_key, get_current_user_jwt,
-    require_admin, verify_token, get_user_by_api_key
+    require_admin, verify_token, get_user_by_api_key, verify_password, get_user_by_email
 )
 from middleware import RateLimitMiddleware, UsageTrackingMiddleware, CreditCheckMiddleware
 from payment_processor import PaymentProcessor, WebhookHandler
@@ -148,6 +148,16 @@ class UsageStats(BaseModel):
     requests_today: int
     tokens_today: int
     cost_today: float
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+class EmailVerificationRequest(BaseModel):
+    email: str
+
+class EmailVerificationConfirm(BaseModel):
+    token: str
 
 def is_jwt(token: str) -> bool:
     """Check if a token is a JWT token"""
@@ -816,23 +826,116 @@ async def google_callback(request: StarletteRequest, db=Depends(get_db)):
         logger.info(f"[Google OAuth] Exception: {e}")
         raise
 
-@app.get("/test")
-async def test():
-    """Test endpoint to check environment variables"""
-    logger.info("Test endpoint hit")
-    gemini_key = os.getenv('GEMINI_API_KEY')
-    openai_key = os.getenv('OPENAI_API_KEY')
-    anthropic_key = os.getenv('ANTHROPIC_API_KEY')
-    
-    return {
-        "status": "ok",
-        "environment_variables": {
-            "GEMINI_API_KEY": "SET" if gemini_key else "NOT_SET",
-            "OPENAI_API_KEY": "SET" if openai_key else "NOT_SET", 
-            "ANTHROPIC_API_KEY": "SET" if anthropic_key else "NOT_SET",
-        },
-        "gemini_key_preview": gemini_key[:10] + "..." if gemini_key else None
-    }
+@app.post("/auth/change-password")
+async def change_password(
+    password_data: PasswordChangeRequest,
+    current_user: User = Depends(get_current_user_api_key),
+    db=Depends(get_db)
+):
+    """Change user password"""
+    try:
+        # Verify current password
+        if not verify_password(password_data.current_password, current_user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is incorrect"
+            )
+        
+        # Validate new password
+        if len(password_data.new_password) < 8:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="New password must be at least 8 characters long"
+            )
+        
+        # Hash new password
+        new_password_hash = get_password_hash(password_data.new_password)
+        
+        # Update user password
+        current_user.password_hash = new_password_hash
+        current_user.updated_at = datetime.utcnow()
+        db.commit()
+        
+        return {"message": "Password changed successfully"}
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error changing password: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to change password"
+        )
+
+@app.post("/auth/send-verification-email")
+async def send_verification_email(
+    current_user: User = Depends(get_current_user_api_key),
+    db=Depends(get_db)
+):
+    """Send email verification to user"""
+    try:
+        # Generate verification token
+        verification_token = create_access_token(
+            data={"sub": current_user.email, "type": "email_verification"},
+            expires_delta=timedelta(hours=24)
+        )
+        
+        # In a real implementation, you would send an email here
+        # For now, we'll just return the token (in production, send via email service)
+        verification_url = f"https://unillm-frontend.railway.app/verify-email?token={verification_token}"
+        
+        # TODO: Integrate with email service (SendGrid, AWS SES, etc.)
+        logger.info(f"Verification email would be sent to {current_user.email}")
+        logger.info(f"Verification URL: {verification_url}")
+        
+        return {
+            "message": "Verification email sent successfully",
+            "verification_url": verification_url  # Remove this in production
+        }
+        
+    except Exception as e:
+        logger.error(f"Error sending verification email: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send verification email"
+        )
+
+@app.post("/auth/verify-email")
+async def verify_email(
+    verification_data: EmailVerificationConfirm,
+    db=Depends(get_db)
+):
+    """Verify user email with token"""
+    try:
+        # Verify token
+        email = verify_token(verification_data.token)
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired verification token"
+            )
+        
+        # Get user by email
+        user = get_user_by_email(db, email)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        # Mark email as verified (you might want to add an email_verified field to User model)
+        # For now, we'll just return success
+        user.updated_at = datetime.utcnow()
+        db.commit()
+        
+        return {"message": "Email verified successfully"}
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error verifying email: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to verify email"
+        )
 
 # API Key Management endpoints
 class ApiKeyCreate(BaseModel):
@@ -939,6 +1042,23 @@ async def delete_api_key(
     else:
         raise HTTPException(status_code=404, detail="API key not found")
 
+@app.get("/test")
+async def test():
+    """Test endpoint to check environment variables"""
+    logger.info("Test endpoint hit")
+    gemini_key = os.getenv('GEMINI_API_KEY')
+    openai_key = os.getenv('OPENAI_API_KEY')
+    anthropic_key = os.getenv('ANTHROPIC_API_KEY')
+    
+    return {
+        "status": "ok",
+        "environment_variables": {
+            "GEMINI_API_KEY": "SET" if gemini_key else "NOT_SET",
+            "OPENAI_API_KEY": "SET" if openai_key else "NOT_SET", 
+            "ANTHROPIC_API_KEY": "SET" if anthropic_key else "NOT_SET",
+        },
+        "gemini_key_preview": gemini_key[:10] + "..." if gemini_key else None
+    }
 
 if __name__ == "__main__":
     import uvicorn

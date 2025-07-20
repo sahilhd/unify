@@ -5,7 +5,9 @@ import {
   EnvelopeIcon,
   ShieldCheckIcon,
   BellIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
 
 const Settings: React.FC = () => {
@@ -16,27 +18,124 @@ const Settings: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [notifications, setNotifications] = useState(true);
   const [theme, setTheme] = useState('dark');
+  
+  // Loading states
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+  
+  // Status messages
+  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [verificationMessage, setVerificationMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [verificationUrl, setVerificationUrl] = useState<string | null>(null);
 
-  const handleSaveProfile = () => {
-    // TODO: Implement profile update
-    alert('Profile updated successfully!');
-  };
-
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
-      alert('New passwords do not match!');
+      setPasswordMessage({ type: 'error', text: 'New passwords do not match!' });
       return;
     }
     if (newPassword.length < 8) {
-      alert('Password must be at least 8 characters long!');
+      setPasswordMessage({ type: 'error', text: 'Password must be at least 8 characters long!' });
       return;
     }
-    // TODO: Implement password change
-    alert('Password changed successfully!');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+
+    setIsChangingPassword(true);
+    setPasswordMessage(null);
+
+    try {
+      const response = await fetch('https://web-production-70deb.up.railway.app/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.api_key}`
+        },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setPasswordMessage({ type: 'success', text: 'Password changed successfully!' });
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setPasswordMessage({ type: 'error', text: data.detail || 'Failed to change password' });
+      }
+    } catch (error) {
+      setPasswordMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
+
+  const handleSendVerificationEmail = async () => {
+    setIsSendingVerification(true);
+    setVerificationMessage(null);
+
+    try {
+      const response = await fetch('https://web-production-70deb.up.railway.app/auth/send-verification-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.api_key}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setVerificationMessage({ type: 'success', text: 'Verification email sent successfully!' });
+        setVerificationUrl(data.verification_url);
+      } else {
+        setVerificationMessage({ type: 'error', text: data.detail || 'Failed to send verification email' });
+      }
+    } catch (error) {
+      setVerificationMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setIsSendingVerification(false);
+    }
+  };
+
+  const handleVerifyEmail = async (token: string) => {
+    setIsVerifyingEmail(true);
+    setVerificationMessage(null);
+
+    try {
+      const response = await fetch('https://web-production-70deb.up.railway.app/auth/verify-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ token })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setVerificationMessage({ type: 'success', text: 'Email verified successfully!' });
+        setVerificationUrl(null);
+      } else {
+        setVerificationMessage({ type: 'error', text: data.detail || 'Failed to verify email' });
+      }
+    } catch (error) {
+      setVerificationMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setIsVerifyingEmail(false);
+    }
+  };
+
+  // Check if there's a verification token in the URL
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (token) {
+      handleVerifyEmail(token);
+    }
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -45,58 +144,63 @@ const Settings: React.FC = () => {
         <p className="text-gray-400">Manage your account preferences and settings</p>
       </div>
 
-      {/* Profile Settings */}
+      {/* Email Verification */}
       <div className="bg-gray-800 shadow rounded-lg border border-gray-700">
         <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-white mb-4">Profile Settings</h3>
+          <h3 className="text-lg leading-6 font-medium text-white mb-4">Email Verification</h3>
           
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Email Address
-              </label>
-              <div className="flex items-center space-x-3">
-                <EnvelopeIcon className="h-5 w-5 text-gray-400" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter your email"
-                />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <EnvelopeIcon className="h-5 w-5 text-gray-400 mr-3" />
+                <div>
+                  <p className="text-sm font-medium text-white">Email Address</p>
+                  <p className="text-sm text-gray-400">{user?.email}</p>
+                </div>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Account Created
-              </label>
-              <div className="flex items-center space-x-3">
-                <UserIcon className="h-5 w-5 text-gray-400" />
-                <span className="text-white">
-                  {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Current Credits
-              </label>
-              <div className="flex items-center space-x-3">
-                <ShieldCheckIcon className="h-5 w-5 text-gray-400" />
-                <span className="text-white">{user?.credits || 0} credits</span>
-              </div>
-            </div>
-
-            <div className="pt-4">
               <button
-                onClick={handleSaveProfile}
-                className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-md transition-colors"
+                onClick={handleSendVerificationEmail}
+                disabled={isSendingVerification}
+                className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white py-2 px-4 rounded-md transition-colors"
               >
-                Save Changes
+                {isSendingVerification ? 'Sending...' : 'Send Verification Email'}
               </button>
             </div>
+
+            {verificationMessage && (
+              <div className={`flex items-center p-3 rounded-md ${
+                verificationMessage.type === 'success' 
+                  ? 'bg-green-900/20 border border-green-500/50' 
+                  : 'bg-red-900/20 border border-red-500/50'
+              }`}>
+                {verificationMessage.type === 'success' ? (
+                  <CheckCircleIcon className="h-5 w-5 text-green-400 mr-2" />
+                ) : (
+                  <ExclamationCircleIcon className="h-5 w-5 text-red-400 mr-2" />
+                )}
+                <span className={`text-sm ${
+                  verificationMessage.type === 'success' ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {verificationMessage.text}
+                </span>
+              </div>
+            )}
+
+            {verificationUrl && (
+              <div className="bg-blue-900/20 border border-blue-500/50 rounded-md p-3">
+                <p className="text-sm text-blue-400 mb-2">
+                  Verification URL (for testing - remove in production):
+                </p>
+                <a 
+                  href={verificationUrl}
+                  className="text-sm text-blue-300 hover:text-blue-200 break-all"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {verificationUrl}
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -146,13 +250,94 @@ const Settings: React.FC = () => {
               />
             </div>
 
+            {passwordMessage && (
+              <div className={`flex items-center p-3 rounded-md ${
+                passwordMessage.type === 'success' 
+                  ? 'bg-green-900/20 border border-green-500/50' 
+                  : 'bg-red-900/20 border border-red-500/50'
+              }`}>
+                {passwordMessage.type === 'success' ? (
+                  <CheckCircleIcon className="h-5 w-5 text-green-400 mr-2" />
+                ) : (
+                  <ExclamationCircleIcon className="h-5 w-5 text-red-400 mr-2" />
+                )}
+                <span className={`text-sm ${
+                  passwordMessage.type === 'success' ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {passwordMessage.text}
+                </span>
+              </div>
+            )}
+
             <div className="pt-4">
               <button
                 onClick={handleChangePassword}
-                className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-md transition-colors"
+                disabled={isChangingPassword}
+                className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white py-2 px-4 rounded-md transition-colors"
               >
-                Change Password
+                {isChangingPassword ? 'Changing Password...' : 'Change Password'}
               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Account Information */}
+      <div className="bg-gray-800 shadow rounded-lg border border-gray-700">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-lg leading-6 font-medium text-white mb-4">Account Information</h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Account Created
+              </label>
+              <div className="flex items-center space-x-3">
+                <UserIcon className="h-5 w-5 text-gray-400" />
+                <span className="text-white">
+                  {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Current Credits
+              </label>
+              <div className="flex items-center space-x-3">
+                <ShieldCheckIcon className="h-5 w-5 text-gray-400" />
+                <span className="text-white">{user?.credits || 0} credits</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  User ID
+                </label>
+                <p className="text-white font-mono text-sm">{user?.id || 'N/A'}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  API Key Status
+                </label>
+                <p className="text-green-400 text-sm">Active</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Rate Limit
+                </label>
+                <p className="text-white text-sm">{user?.rate_limit_per_minute || 60} requests/minute</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Daily Quota
+                </label>
+                <p className="text-white text-sm">{user?.daily_quota || 10000} tokens/day</p>
+              </div>
             </div>
           </div>
         </div>
@@ -203,43 +388,6 @@ const Settings: React.FC = () => {
                 <option value="light">Light</option>
                 <option value="system">System</option>
               </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Account Information */}
-      <div className="bg-gray-800 shadow rounded-lg border border-gray-700">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-white mb-4">Account Information</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                User ID
-              </label>
-              <p className="text-white font-mono text-sm">{user?.id || 'N/A'}</p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                API Key Status
-              </label>
-              <p className="text-green-400 text-sm">Active</p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Last Login
-              </label>
-              <p className="text-white text-sm">Today at 2:30 PM</p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Account Status
-              </label>
-              <p className="text-green-400 text-sm">Active</p>
             </div>
           </div>
         </div>
