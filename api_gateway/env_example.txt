@@ -1,21 +1,31 @@
-# UniLLM API Gateway Configuration
-# Copy this file to .env and add your actual API keys
+# Database
+DATABASE_URL=postgresql://username:password@localhost:5432/unillm
 
-# OpenAI API Key
-OPENAI_API_KEY=your_openai_api_key_here
+# Security
+SECRET_KEY=your-secret-key-here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-# Anthropic API Key
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
+# API Keys
+OPENAI_API_KEY=your-openai-api-key
+ANTHROPIC_API_KEY=your-anthropic-api-key
+GEMINI_API_KEY=your-gemini-api-key
 
-# Google Gemini API Key
-GEMINI_API_KEY=your_gemini_api_key_here
+# Stripe
+STRIPE_SECRET_KEY=your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
 
-# Mistral API Key (optional)
-MISTRAL_API_KEY=your_mistral_api_key_here
+# OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
 
-# Cohere API Key (optional)
-COHERE_API_KEY=your_cohere_api_key_here
+# Session
+SESSION_SECRET_KEY=your-session-secret-key
 
-# Server Configuration
-HOST=0.0.0.0
-PORT=8000 
+# Email (Resend)
+RESEND_API_KEY=your-resend-api-key
+RESEND_FROM_EMAIL=noreply@yourdomain.com
+
+# Environment
+ENVIRONMENT=production
+DEBUG=false 

@@ -41,7 +41,7 @@ class EmailService:
                 return True
             
             subject = "Verify your UniLLM account"
-            html_content = self._get_verification_email_template(verification_url)
+            html_content = self._get_verification_email_template(verification_url, email)
             
             response = resend.emails.send({
                 "from": self.from_email,
@@ -81,7 +81,7 @@ class EmailService:
             logger.error(f"Failed to send welcome email to {email}: {str(e)}")
             return False
     
-    def _get_verification_email_template(self, verification_url: str) -> str:
+    def _get_verification_email_template(self, verification_url: str, email: str) -> str:
         """Get HTML template for verification email"""
         return f"""
         <!DOCTYPE html>
