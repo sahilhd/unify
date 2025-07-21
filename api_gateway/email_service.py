@@ -43,7 +43,7 @@ class EmailService:
             subject = "Verify your UniLLM account"
             html_content = self._get_verification_email_template(verification_url, email)
             
-            response = resend.emails.send({
+            response = resend.Emails.send({
                 "from": self.from_email,
                 "to": email,
                 "subject": subject,
@@ -67,7 +67,7 @@ class EmailService:
             subject = "Welcome to UniLLM! Your account is now active"
             html_content = self._get_welcome_email_template()
             
-            response = resend.emails.send({
+            response = resend.Emails.send({
                 "from": self.from_email,
                 "to": email,
                 "subject": subject,
