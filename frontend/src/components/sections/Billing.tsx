@@ -42,28 +42,13 @@ const Billing: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setBillingData({
-          credits: data.credits || 1000,
+          credits: data.credits || 0,  // Use actual credits, default to 0
           usage: {
             total_requests: data.total_requests || 0,
             total_tokens: data.total_tokens || 0,
             total_cost: data.total_cost || 0,
           },
-          invoices: data.invoices || [
-            {
-              id: 'INV-001',
-              amount: 25.00,
-              status: 'paid',
-              date: '2024-01-15',
-              description: 'Credit purchase - 1000 credits',
-            },
-            {
-              id: 'INV-002',
-              amount: 15.00,
-              status: 'paid',
-              date: '2024-01-10',
-              description: 'Credit purchase - 500 credits',
-            },
-          ],
+          invoices: data.invoices || [],  // Use actual invoices, empty array if none
         });
       }
     } catch (error) {
@@ -168,19 +153,9 @@ const Billing: React.FC = () => {
           </div>
           
           <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-12 bg-gradient-to-r from-gray-600 to-gray-700 rounded flex items-center justify-center">
-                  <span className="text-white text-xs font-mono">••••</span>
-                </div>
-                <div>
-                  <div className="text-white font-medium">•••• •••• •••• 4242</div>
-                  <div className="text-gray-400 text-sm">Expires 12/25</div>
-                </div>
-              </div>
-              <button className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors">
-                Edit
-              </button>
+            <div className="text-center py-4">
+              <div className="text-gray-400 text-sm mb-2">No payment methods added</div>
+              <div className="text-gray-500 text-xs">Add a payment method to purchase credits</div>
             </div>
           </div>
           

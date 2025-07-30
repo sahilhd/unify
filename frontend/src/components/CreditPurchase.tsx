@@ -161,14 +161,9 @@ const CreditPurchase: React.FC<CreditPurchaseProps> = ({ onClose, onSuccess }) =
           </div>
           
           <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-12 bg-gradient-to-r from-gray-600 to-gray-700 rounded flex items-center justify-center">
-                <span className="text-white text-xs font-mono">••••</span>
-              </div>
-              <div>
-                <div className="text-white font-medium">•••• •••• •••• 4242</div>
-                <div className="text-gray-400 text-sm">Test card (no charges)</div>
-              </div>
+            <div className="text-center py-2">
+              <div className="text-gray-400 text-sm">Test Environment</div>
+              <div className="text-gray-500 text-xs">No real charges will be made</div>
             </div>
           </div>
           
