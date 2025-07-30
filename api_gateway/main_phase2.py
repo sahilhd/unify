@@ -35,9 +35,11 @@ from database import get_db, User, UsageLog, BillingHistory, create_tables, calc
 from auth import (
     get_password_hash, generate_api_key, authenticate_user, 
     create_access_token, get_current_user_api_key, get_current_user_jwt,
-    require_admin, verify_token, get_user_by_api_key, verify_password, get_user_by_email
+    require_admin, verify_token, get_user_by_api_key, verify_password, get_user_by_email,
+    validate_password_strength
 )
 from middleware import RateLimitMiddleware, UsageTrackingMiddleware, CreditCheckMiddleware
+from security_middleware import SecurityHeadersMiddleware, RequestLoggingMiddleware, BruteForceProtectionMiddleware
 from payment_processor import PaymentProcessor, WebhookHandler
 from email_service import email_service
 
@@ -84,6 +86,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add security middleware
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(BruteForceProtectionMiddleware)
 
 # Add custom middleware
 app.add_middleware(CreditCheckMiddleware)
@@ -237,6 +244,9 @@ def is_jwt(token: str) -> bool:
 @app.post("/auth/register", response_model=UserResponse)
 async def register_user(user_data: UserCreate, db=Depends(get_db)):
     """Register a new user"""
+    # Validate password strength
+    validate_password_strength(user_data.password)
+    
     # Check if user already exists
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
@@ -935,12 +945,8 @@ async def change_password(
                 detail="Current password is incorrect"
             )
         
-        # Validate new password
-        if len(password_data.new_password) < 8:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="New password must be at least 8 characters long"
-            )
+        # Validate new password strength
+        validate_password_strength(password_data.new_password)
         
         # Hash new password
         new_password_hash = get_password_hash(password_data.new_password)

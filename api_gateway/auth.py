@@ -11,16 +11,48 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 import secrets
 import string
+import re
 from database import get_db, User
 
 # Import configuration
-from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, MIN_PASSWORD_LENGTH, REQUIRE_PASSWORD_COMPLEXITY
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Security scheme
 security = HTTPBearer()
+
+def validate_password_strength(password: str) -> None:
+    """Validate password meets security requirements"""
+    if len(password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Password must be at least {MIN_PASSWORD_LENGTH} characters long"
+        )
+    
+    if REQUIRE_PASSWORD_COMPLEXITY:
+        # Check for complexity requirements
+        if not re.search(r"[A-Z]", password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must contain at least one uppercase letter"
+            )
+        if not re.search(r"[a-z]", password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must contain at least one lowercase letter"
+            )
+        if not re.search(r"\d", password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must contain at least one number"
+            )
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must contain at least one special character"
+            )
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""

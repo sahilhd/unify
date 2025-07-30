@@ -29,3 +29,7 @@ RESEND_FROM_EMAIL=noreply@yourdomain.com
 # Environment
 ENVIRONMENT=production
 DEBUG=false 
+# Security Settings
+REQUIRE_PASSWORD_COMPLEXITY=true
+CORS_ORIGINS=https://your-frontend-domain.com,https://unillm-frontend.railway.app
+FRONTEND_URL=https://unillm-frontend.railway.app

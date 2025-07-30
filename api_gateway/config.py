@@ -13,9 +13,22 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 DEBUG = ENVIRONMENT == "development"
 
 # Security
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY or SECRET_KEY == "your-secret-key-change-in-production":
+    if ENVIRONMENT == "production":
+        raise ValueError("SECRET_KEY must be set in production and cannot be the default value")
+    else:
+        # Generate a temporary secret for development
+        import secrets
+        SECRET_KEY = secrets.token_urlsafe(32)
+        print("⚠️  WARNING: Using temporary SECRET_KEY for development. Set SECRET_KEY in production!")
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+
+# Password Requirements
+MIN_PASSWORD_LENGTH = 8
+REQUIRE_PASSWORD_COMPLEXITY = os.getenv("REQUIRE_PASSWORD_COMPLEXITY", "true").lower() == "true"
 
 # Database
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///unillm.db")
