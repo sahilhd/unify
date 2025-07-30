@@ -214,6 +214,8 @@ class UsageStats(BaseModel):
     requests_today: int
     tokens_today: int
     cost_today: float
+    credits: float  # Add current credits
+    invoices: list  # Add billing history
 
 class PasswordChangeRequest(BaseModel):
     current_password: str
@@ -574,13 +576,32 @@ async def get_usage_stats(
     requests_today = len(today_logs)
     tokens_today = sum(log.tokens_used for log in today_logs)
     cost_today = sum(float(log.cost) for log in today_logs)
+    
+    # Get billing history (recent transactions)
+    billing_history = db.query(BillingHistory).filter(
+        BillingHistory.user_id == user.id
+    ).order_by(BillingHistory.created_at.desc()).limit(10).all()
+    
+    invoices = [
+        {
+            "id": record.id,
+            "amount": float(record.amount),
+            "status": "paid",  # Assuming all records are paid
+            "date": record.created_at.strftime("%Y-%m-%d"),
+            "description": record.description
+        }
+        for record in billing_history
+    ]
+    
     return UsageStats(
         total_requests=total_requests,
         total_tokens=total_tokens,
         total_cost=total_cost,
         requests_today=requests_today,
         tokens_today=tokens_today,
-        cost_today=cost_today
+        cost_today=cost_today,
+        credits=float(user.credits),
+        invoices=invoices
     )
 
 @app.get("/billing/usage-over-time")
