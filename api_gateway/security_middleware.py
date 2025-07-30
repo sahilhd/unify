@@ -121,6 +121,11 @@ class BruteForceProtectionMiddleware:
         request = Request(scope, receive)
         ip_address = request.client.host
         
+        # Skip brute force protection for utility endpoints
+        if request.url.path in ["/health", "/auth/check-password-strength", "/test"]:
+            await self.app(scope, receive, send)
+            return
+        
         # Check if IP is locked out
         if self._is_locked_out(ip_address):
             response = JSONResponse(

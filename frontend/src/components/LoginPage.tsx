@@ -30,20 +30,27 @@ const LoginPage: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [passwordStrength, setPasswordStrength] = useState<PasswordStrength | null>(null);
   const [checkingPassword, setCheckingPassword] = useState(false);
+  const [passwordCache, setPasswordCache] = useState<{[key: string]: PasswordStrength}>({});
   const { login, register } = useAuth();
 
   // Check password strength as user types (only for registration)
   useEffect(() => {
     if (!isLogin && password.length > 0) {
+      // Check cache first
+      if (passwordCache[password]) {
+        setPasswordStrength(passwordCache[password]);
+        return;
+      }
+
       const timeoutId = setTimeout(async () => {
         await checkPasswordStrength(password);
-      }, 300); // Debounce for 300ms
+      }, 800); // Increased debounce to 800ms
 
       return () => clearTimeout(timeoutId);
     } else {
       setPasswordStrength(null);
     }
-  }, [password, isLogin]);
+  }, [password, isLogin, passwordCache]);
 
   const checkPasswordStrength = async (pwd: string) => {
     if (pwd.length === 0) {
@@ -64,6 +71,8 @@ const LoginPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setPasswordStrength(data);
+        // Cache the result
+        setPasswordCache(prev => ({ ...prev, [pwd]: data }));
       }
     } catch (error) {
       console.error('Error checking password strength:', error);

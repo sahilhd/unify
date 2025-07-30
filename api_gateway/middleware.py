@@ -33,8 +33,8 @@ class RateLimitMiddleware:
         
         request = Request(scope, receive)
         
-        # Skip rate limiting for health checks
-        if request.url.path == "/health":
+        # Skip rate limiting for health checks and utility endpoints
+        if request.url.path in ["/health", "/auth/check-password-strength", "/test"]:
             await self.app(scope, receive, send)
             return
         
