@@ -197,6 +197,10 @@ class CreditPurchase(BaseModel):
     amount: float
     payment_method: str
 
+class CreditTopUp(BaseModel):
+    amount: float
+    payment_method: str = "manual_topup"
+
 class PaymentIntentRequest(BaseModel):
     credit_amount: int
 
@@ -804,6 +808,45 @@ async def add_credits_direct(
         user_id=current_user.id,
         amount=request.amount,
         description=f"Credit purchase via {request.payment_method}",
+        transaction_type="credit_purchase"
+    )
+    
+    db.add(billing_record)
+    db.commit()
+    db.refresh(current_user)
+    
+    return {
+        "message": "Credits added successfully",
+        "credits_added": request.amount,
+        "new_balance": float(current_user.credits)
+    }
+
+@app.post("/billing/add-credits")
+async def add_credits(
+    request: CreditTopUp,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db=Depends(get_db)
+):
+    """Add credits to user account (for testing/admin purposes)"""
+    token = credentials.credentials
+    
+    # Get current user
+    try:
+        if is_jwt(token):
+            current_user = get_current_user_jwt(credentials, db)
+        else:
+            current_user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    # Add credits to user account (convert float to Decimal)
+    current_user.credits += Decimal(str(request.amount))
+    
+    # Log billing transaction
+    billing_record = BillingHistory(
+        user_id=current_user.id,
+        amount=request.amount,
+        description=f"Credit top-up via {request.payment_method}",
         transaction_type="credit_purchase"
     )
     

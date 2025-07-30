@@ -63,12 +63,12 @@ RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
 DAILY_QUOTA = int(os.getenv("DAILY_QUOTA", "10000"))
 
 # Billing
-_default_credits = float(os.getenv("DEFAULT_CREDITS", "0.0024"))
+_default_credits = float(os.getenv("DEFAULT_CREDITS", "0.10"))  # $0.10 for testing (~40-50 requests)
 # Safety check: prevent excessive default credits (max $1.00)
 if _default_credits > 1.0:
     print(f"⚠️  WARNING: DEFAULT_CREDITS ({_default_credits}) is very high! Limiting to 1.0")
     _default_credits = 1.0
-DEFAULT_CREDITS = _default_credits  # Small initial credits (~$0.002)
+DEFAULT_CREDITS = _default_credits  # Reasonable initial credits for testing
 MIN_CREDITS_FOR_REQUEST = float(os.getenv("MIN_CREDITS_FOR_REQUEST", "0.001"))
 
 # Stripe Configuration
