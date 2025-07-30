@@ -43,20 +43,34 @@ COHERE_API_KEY = os.getenv("COHERE_API_KEY")
 # CORS Configuration
 def get_cors_origins() -> List[str]:
     """Get CORS origins based on environment"""
-    if ENVIRONMENT == "production":
-        # In production, only allow specific domains
-        origins = os.getenv("CORS_ORIGINS", "").split(",")
-        origins = [origin.strip() for origin in origins if origin.strip()]
-        
-        # Always allow the frontend domain
-        frontend_url = os.getenv("FRONTEND_URL", "https://your-frontend-domain.com")
-        if frontend_url not in origins:
-            origins.append(frontend_url)
-            
+    # Get CORS origins from environment variable
+    cors_origins_str = os.getenv("CORS_ORIGINS", "")
+    
+    if cors_origins_str:
+        # Parse comma-separated origins
+        origins = [origin.strip() for origin in cors_origins_str.split(",")]
         return origins
+    
+    # Environment-specific defaults
+    if ENVIRONMENT == "production":
+        # Production: Only allow specific domains
+        frontend_url = os.getenv("FRONTEND_URL", "")
+        if frontend_url:
+            return [frontend_url]
+        else:
+            # Fallback for production
+            return [
+                "https://unify-production-82fc.up.railway.app",
+                "https://yourdomain.com"  # Replace with your actual domain
+            ]
     else:
-        # In development, allow all origins
-        return ["*"]
+        # Development: Allow localhost and Railway preview URLs
+        return [
+            "http://localhost:3000",
+            "http://localhost:3001", 
+            "https://*.railway.app",
+            "https://unify-production-82fc.up.railway.app"
+        ]
 
 # Rate Limiting
 RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))

@@ -33,3 +33,4 @@ DEBUG=false
 REQUIRE_PASSWORD_COMPLEXITY=true
 CORS_ORIGINS=https://your-frontend-domain.com,https://unillm-frontend.railway.app
 FRONTEND_URL=https://unillm-frontend.railway.app
+ADMIN_CONFIRMATION_TOKEN=your-secure-admin-token-here

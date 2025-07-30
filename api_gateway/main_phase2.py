@@ -70,6 +70,22 @@ app = FastAPI(
     debug=DEBUG
 )
 
+# Add request size limit
+MAX_REQUEST_SIZE = 1024 * 1024  # 1MB limit
+
+@app.middleware("http")
+async def limit_request_size(request: Request, call_next):
+    """Limit request size to prevent DoS attacks"""
+    if request.method in ["POST", "PUT", "PATCH"]:
+        body = await request.body()
+        if len(body) > MAX_REQUEST_SIZE:
+            return JSONResponse(
+                status_code=413,
+                content={"detail": "Request too large"}
+            )
+    response = await call_next(request)
+    return response
+
 # Add SessionMiddleware for OAuth support
 app.add_middleware(
     SessionMiddleware,
@@ -83,8 +99,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=get_cors_origins(),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Restrict methods
+    allow_headers=["Authorization", "Content-Type"],  # Restrict headers
+    max_age=86400,  # Cache preflight requests for 24 hours
 )
 
 # Add security middleware
@@ -886,10 +903,23 @@ async def add_credits(
     
     # SECURITY: Only allow admin users to add credits manually
     if not current_user.is_admin:
+        # Log unauthorized admin access attempt
+        logger.warning(f"SECURITY: Unauthorized admin access attempt by user {current_user.email} from IP {request.client.host}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
             detail="Admin access required. Use proper payment flow for credit purchases."
         )
+    
+    # Additional admin verification in production
+    if ENVIRONMENT == "production":
+        # Require additional confirmation for production admin actions
+        admin_confirmation = request.headers.get("X-Admin-Confirmation")
+        if admin_confirmation != os.getenv("ADMIN_CONFIRMATION_TOKEN"):
+            logger.warning(f"SECURITY: Admin action without proper confirmation by {current_user.email}")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Additional admin confirmation required in production"
+            )
     
     # Add credits to user account (convert float to Decimal)
     current_user.credits += Decimal(str(request.amount))
