@@ -18,6 +18,15 @@ interface BillingData {
     date: string;
     description: string;
   }>;
+  payment_methods?: Array<{
+    id: string;
+    card: {
+      brand: string;
+      last4: string;
+      exp_month: number;
+      exp_year: number;
+    };
+  }>;
 }
 
 const Billing: React.FC = () => {
@@ -34,15 +43,32 @@ const Billing: React.FC = () => {
   const fetchBillingData = async () => {
     try {
       const apiKey = localStorage.getItem('unillm_api_key');
-      const response = await fetch(`${API_BASE_URL}/billing/usage`, {
+      
+      // Fetch billing usage data
+      const usageResponse = await fetch(`${API_BASE_URL}/billing/usage`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      // Fetch payment methods
+      const paymentMethodsResponse = await fetch(`${API_BASE_URL}/billing/payment-methods`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (usageResponse.ok) {
+        const data = await usageResponse.json();
+        let paymentMethods = [];
+        
+        if (paymentMethodsResponse.ok) {
+          const pmData = await paymentMethodsResponse.json();
+          paymentMethods = pmData.payment_methods || [];
+        }
+        
         setBillingData({
           credits: data.credits || 0,  // Use actual credits, default to 0
           usage: {
@@ -51,6 +77,7 @@ const Billing: React.FC = () => {
             total_cost: data.total_cost || 0,
           },
           invoices: data.invoices || [],  // Use actual invoices, empty array if none
+          payment_methods: paymentMethods
         });
       }
     } catch (error) {
@@ -161,10 +188,35 @@ const Billing: React.FC = () => {
           </div>
           
           <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
-            <div className="text-center py-4">
-              <div className="text-gray-400 text-sm mb-2">No payment methods added</div>
-              <div className="text-gray-500 text-xs">Add a payment method to purchase credits</div>
-            </div>
+            {billingData?.payment_methods && billingData.payment_methods.length > 0 ? (
+              <div className="space-y-3">
+                {billingData.payment_methods.map((pm) => (
+                  <div key={pm.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-12 bg-gradient-to-r from-gray-600 to-gray-700 rounded flex items-center justify-center">
+                        <span className="text-white text-xs font-mono">••••</span>
+                      </div>
+                      <div>
+                        <div className="text-white font-medium">
+                          •••• •••• •••• {pm.card.last4}
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                          {pm.card.brand.toUpperCase()} • Expires {pm.card.exp_month}/{pm.card.exp_year}
+                        </div>
+                      </div>
+                    </div>
+                    <button className="text-gray-400 hover:text-red-400 text-sm transition-colors">
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <div className="text-gray-400 text-sm mb-2">No payment methods added</div>
+                <div className="text-gray-500 text-xs">Add a payment method to purchase credits</div>
+              </div>
+            )}
           </div>
           
           <button 

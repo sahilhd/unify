@@ -720,6 +720,30 @@ async def create_setup_intent(
         "setup_intent_id": setup_data["setup_intent_id"]
     }
 
+@app.get("/billing/payment-methods")
+async def get_payment_methods(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db=Depends(get_db)
+):
+    """Get saved payment methods for the user"""
+    token = credentials.credentials
+    
+    # Get current user
+    try:
+        if is_jwt(token):
+            current_user = get_current_user_jwt(credentials, db)
+        else:
+            current_user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    # Get saved payment methods
+    payment_methods = PaymentProcessor.get_saved_payment_methods(current_user)
+    
+    return {
+        "payment_methods": payment_methods
+    }
+
 @app.post("/billing/create-payment-intent")
 async def create_payment_intent(
     request: PaymentIntentRequest,

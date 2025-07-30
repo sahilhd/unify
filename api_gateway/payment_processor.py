@@ -52,10 +52,14 @@ class PaymentProcessor:
         amount_usd = cls.CREDIT_PACKAGES[credit_amount]
         
         try:
+            # Create or get Stripe customer for user
+            customer_id = cls._get_or_create_customer(user)
+            
             # Create payment intent
             payment_intent = stripe.PaymentIntent.create(
                 amount=int(amount_usd * 100),  # Stripe uses cents
                 currency="usd",
+                customer=customer_id,  # Associate with customer for payment method storage
                 metadata={
                     "user_id": user.id,
                     "user_email": user.email,
@@ -63,7 +67,8 @@ class PaymentProcessor:
                     "amount_usd": str(amount_usd)
                 },
                 description=f"Purchase {credit_amount} credits for {user.email}",
-                receipt_email=user.email
+                receipt_email=user.email,
+                setup_future_usage="off_session"  # Allow saving payment method
             )
             
             return {
@@ -78,6 +83,76 @@ class PaymentProcessor:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Payment processing error: {str(e)}"
             )
+
+    @classmethod
+    def _get_or_create_customer(cls, user: User) -> str:
+        """
+        Get or create a Stripe customer for the user
+        
+        Args:
+            user: User object
+            
+        Returns:
+            Stripe customer ID
+        """
+        try:
+            # Check if user already has a Stripe customer ID stored
+            # For now, create a new customer each time - in production you'd store this
+            customer = stripe.Customer.create(
+                email=user.email,
+                metadata={
+                    "user_id": user.id
+                }
+            )
+            return customer.id
+            
+        except stripe.error.StripeError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Customer creation error: {str(e)}"
+            )
+
+    @classmethod
+    def get_saved_payment_methods(cls, user: User) -> List[Dict]:
+        """
+        Get saved payment methods for a user
+        
+        Args:
+            user: User object
+            
+        Returns:
+            List of payment method data
+        """
+        try:
+            # In production, you'd get the customer ID from the database
+            # For now, we'll search for customers by email
+            customers = stripe.Customer.list(email=user.email, limit=1)
+            
+            if not customers.data:
+                return []
+            
+            customer = customers.data[0]
+            payment_methods = stripe.PaymentMethod.list(
+                customer=customer.id,
+                type="card"
+            )
+            
+            return [
+                {
+                    "id": pm.id,
+                    "card": {
+                        "brand": pm.card.brand,
+                        "last4": pm.card.last4,
+                        "exp_month": pm.card.exp_month,
+                        "exp_year": pm.card.exp_year
+                    }
+                }
+                for pm in payment_methods.data
+            ]
+            
+        except stripe.error.StripeError as e:
+            # Return empty list if error - don't fail the request
+            return []
     
     @classmethod
     def process_payment_success(cls, db: Session, payment_intent_id: str) -> Dict:
