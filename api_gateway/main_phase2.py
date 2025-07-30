@@ -1240,6 +1240,114 @@ async def check_password_strength_endpoint(request: PasswordCheckRequest):
             suggestions=["Unable to check password strength. Please try again."]
         )
 
+@app.post("/debug/reset-user-data")
+async def reset_user_data(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db=Depends(get_db)
+):
+    """DANGER: Reset user's billing history and usage logs - FOR TESTING ONLY"""
+    token = credentials.credentials
+    
+    # Get current user
+    try:
+        if is_jwt(token):
+            user = get_current_user_jwt(credentials, db)
+        else:
+            user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    # Count current data
+    billing_count = db.query(BillingHistory).filter(BillingHistory.user_id == user.id).count()
+    usage_count = db.query(UsageLog).filter(UsageLog.user_id == user.id).count()
+    
+    # Delete all billing history for this user
+    db.query(BillingHistory).filter(BillingHistory.user_id == user.id).delete()
+    
+    # Delete all usage logs for this user
+    db.query(UsageLog).filter(UsageLog.user_id == user.id).delete()
+    
+    # Reset credits to default
+    user.credits = DEFAULT_CREDITS
+    
+    db.commit()
+    
+    return {
+        "message": "User data reset successfully",
+        "user_id": user.id,
+        "email": user.email,
+        "deleted_billing_records": billing_count,
+        "deleted_usage_records": usage_count,
+        "new_credits": float(user.credits)
+    }
+
+@app.get("/debug/user-data")
+async def debug_user_data(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db=Depends(get_db)
+):
+    """Debug endpoint to investigate user data isolation"""
+    token = credentials.credentials
+    
+    # Get current user
+    try:
+        if is_jwt(token):
+            user = get_current_user_jwt(credentials, db)
+        else:
+            user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    # Get user's billing history
+    billing_history = db.query(BillingHistory).filter(
+        BillingHistory.user_id == user.id
+    ).all()
+    
+    # Get user's usage logs
+    usage_logs = db.query(UsageLog).filter(
+        UsageLog.user_id == user.id
+    ).all()
+    
+    # Check if there are any records with this user's ID that shouldn't exist
+    return {
+        "user_info": {
+            "id": user.id,
+            "email": user.email,
+            "credits": float(user.credits),
+            "created_at": user.created_at.isoformat(),
+            "api_key_preview": user.api_key[:8] + "...",
+        },
+        "billing_history_count": len(billing_history),
+        "billing_history": [
+            {
+                "id": record.id,
+                "amount": float(record.amount),
+                "description": record.description,
+                "transaction_type": record.transaction_type,
+                "created_at": record.created_at.isoformat(),
+                "user_id": record.user_id
+            }
+            for record in billing_history[:5]  # Only show first 5 for brevity
+        ],
+        "usage_logs_count": len(usage_logs),
+        "usage_logs": [
+            {
+                "id": log.id,
+                "model": log.model,
+                "provider": log.provider,
+                "tokens_used": log.tokens_used,
+                "cost": float(log.cost),
+                "created_at": log.request_timestamp.isoformat(),
+                "user_id": log.user_id
+            }
+            for log in usage_logs[:5]  # Only show first 5 for brevity
+        ],
+        "database_sanity_check": {
+            "user_id_matches_billing": all(record.user_id == user.id for record in billing_history),
+            "user_id_matches_usage": all(log.user_id == user.id for log in usage_logs),
+        }
+    }
+
 @app.get("/test")
 async def test():
     """Test endpoint to check environment variables"""
