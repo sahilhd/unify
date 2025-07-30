@@ -36,7 +36,7 @@ from auth import (
     get_password_hash, generate_api_key, authenticate_user, 
     create_access_token, get_current_user_api_key, get_current_user_jwt,
     require_admin, verify_token, get_user_by_api_key, verify_password, get_user_by_email,
-    validate_password_strength
+    validate_password_strength, check_password_strength
 )
 from middleware import RateLimitMiddleware, UsageTrackingMiddleware, CreditCheckMiddleware
 from security_middleware import SecurityHeadersMiddleware, RequestLoggingMiddleware, BruteForceProtectionMiddleware
@@ -220,6 +220,17 @@ class EmailVerificationRequest(BaseModel):
 
 class EmailVerificationConfirm(BaseModel):
     token: str
+
+class PasswordCheckRequest(BaseModel):
+    password: str
+
+class PasswordStrengthResponse(BaseModel):
+    is_valid: bool
+    score: int
+    strength: str
+    strength_color: str
+    requirements: dict
+    suggestions: list
 
 def is_jwt(token: str) -> bool:
     """Check if a token is a JWT token"""
@@ -1209,6 +1220,24 @@ async def resend_verification_email(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to send verification email"
+        )
+
+@app.post("/auth/check-password-strength", response_model=PasswordStrengthResponse)
+async def check_password_strength_endpoint(request: PasswordCheckRequest):
+    """Check password strength and return detailed feedback"""
+    try:
+        result = check_password_strength(request.password)
+        return PasswordStrengthResponse(**result)
+    except Exception as e:
+        logger.error(f"Error checking password strength: {str(e)}")
+        # Return a basic response if something goes wrong
+        return PasswordStrengthResponse(
+            is_valid=False,
+            score=0,
+            strength="Weak",
+            strength_color="red",
+            requirements={},
+            suggestions=["Unable to check password strength. Please try again."]
         )
 
 @app.get("/test")

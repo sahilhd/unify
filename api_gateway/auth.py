@@ -54,6 +54,98 @@ def validate_password_strength(password: str) -> None:
                 detail="Password must contain at least one special character"
             )
 
+def check_password_strength(password: str) -> dict:
+    """Check password strength and return detailed feedback"""
+    result = {
+        "is_valid": True,
+        "score": 0,
+        "requirements": {},
+        "suggestions": []
+    }
+    
+    # Check length
+    length_ok = len(password) >= MIN_PASSWORD_LENGTH
+    result["requirements"]["length"] = {
+        "met": length_ok,
+        "required": MIN_PASSWORD_LENGTH,
+        "current": len(password),
+        "description": f"At least {MIN_PASSWORD_LENGTH} characters"
+    }
+    if length_ok:
+        result["score"] += 20
+    else:
+        result["is_valid"] = False
+        result["suggestions"].append(f"Add {MIN_PASSWORD_LENGTH - len(password)} more characters")
+    
+    if REQUIRE_PASSWORD_COMPLEXITY:
+        # Check uppercase
+        has_upper = bool(re.search(r"[A-Z]", password))
+        result["requirements"]["uppercase"] = {
+            "met": has_upper,
+            "description": "At least one uppercase letter (A-Z)"
+        }
+        if has_upper:
+            result["score"] += 20
+        else:
+            result["is_valid"] = False
+            result["suggestions"].append("Add at least one uppercase letter")
+        
+        # Check lowercase
+        has_lower = bool(re.search(r"[a-z]", password))
+        result["requirements"]["lowercase"] = {
+            "met": has_lower,
+            "description": "At least one lowercase letter (a-z)"
+        }
+        if has_lower:
+            result["score"] += 20
+        else:
+            result["is_valid"] = False
+            result["suggestions"].append("Add at least one lowercase letter")
+        
+        # Check numbers
+        has_number = bool(re.search(r"\d", password))
+        result["requirements"]["number"] = {
+            "met": has_number,
+            "description": "At least one number (0-9)"
+        }
+        if has_number:
+            result["score"] += 20
+        else:
+            result["is_valid"] = False
+            result["suggestions"].append("Add at least one number")
+        
+        # Check special characters
+        has_special = bool(re.search(r"[!@#$%^&*(),.?\":{}|<>]", password))
+        result["requirements"]["special"] = {
+            "met": has_special,
+            "description": "At least one special character (!@#$%^&*(),.?\":{}|<>)"
+        }
+        if has_special:
+            result["score"] += 20
+        else:
+            result["is_valid"] = False
+            result["suggestions"].append("Add at least one special character (!@#$%^&*(),.?\":{}|<>)")
+    else:
+        # If complexity not required, full score for basic length
+        if length_ok:
+            result["score"] = 100
+    
+    # Add strength description
+    if result["score"] >= 100:
+        result["strength"] = "Strong"
+        result["strength_color"] = "green"
+    elif result["score"] >= 80:
+        result["strength"] = "Good"
+        result["strength_color"] = "yellow"
+    elif result["score"] >= 60:
+        result["strength"] = "Fair"
+        result["strength_color"] = "orange"
+    else:
+        result["strength"] = "Weak"
+        result["strength_color"] = "red"
+    
+    return result
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""
     return pwd_context.verify(plain_password, hashed_password)
