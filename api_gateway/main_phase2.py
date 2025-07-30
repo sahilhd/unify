@@ -655,6 +655,46 @@ async def get_billing_history(
     ]
 
 # Payment Processing Endpoints
+@app.get("/billing/stripe-config")
+async def get_stripe_config():
+    """Get Stripe configuration for frontend"""
+    from config import STRIPE_PUBLISHABLE_KEY
+    
+    if not STRIPE_PUBLISHABLE_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Stripe not configured"
+        )
+    
+    return {
+        "publishable_key": STRIPE_PUBLISHABLE_KEY
+    }
+
+@app.post("/billing/create-setup-intent")
+async def create_setup_intent(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db=Depends(get_db)
+):
+    """Create a Stripe setup intent for saving payment methods"""
+    token = credentials.credentials
+    
+    # Get current user
+    try:
+        if is_jwt(token):
+            current_user = get_current_user_jwt(credentials, db)
+        else:
+            current_user = get_current_user_api_key(credentials, db)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    # Create setup intent
+    setup_data = PaymentProcessor.create_setup_intent(current_user)
+    
+    return {
+        "client_secret": setup_data["client_secret"],
+        "setup_intent_id": setup_data["setup_intent_id"]
+    }
+
 @app.post("/billing/create-payment-intent")
 async def create_payment_intent(
     request: PaymentIntentRequest,

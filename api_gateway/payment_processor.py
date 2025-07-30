@@ -214,6 +214,40 @@ class PaymentProcessor:
                 detail=f"Refund error: {str(e)}"
             )
 
+    @classmethod
+    def create_setup_intent(cls, user: User) -> Dict:
+        """
+        Create a Stripe setup intent for saving payment methods
+        
+        Args:
+            user: The user setting up payment method
+            
+        Returns:
+            Setup intent data
+        """
+        try:
+            # Create setup intent
+            setup_intent = stripe.SetupIntent.create(
+                customer=None,  # We'll create customer on successful setup
+                payment_method_types=['card'],
+                metadata={
+                    "user_id": user.id,
+                    "user_email": user.email,
+                },
+                usage='off_session'  # For future payments
+            )
+            
+            return {
+                "client_secret": setup_intent.client_secret,
+                "setup_intent_id": setup_intent.id
+            }
+            
+        except stripe.error.StripeError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Setup intent creation error: {str(e)}"
+            )
+
 class WebhookHandler:
     """Handles Stripe webhook events"""
     

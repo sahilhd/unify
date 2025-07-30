@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CreditCardIcon, PlusIcon, ArrowPathIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL } from '../../utils/config';
 import CreditPurchase from '../CreditPurchase';
+import PaymentMethodSetup from '../PaymentMethodSetup';
 
 interface BillingData {
   credits: number;
@@ -83,9 +84,7 @@ const Billing: React.FC = () => {
   };
 
   const handleAddPaymentMethod = () => {
-    // For now, show an alert. In production, this would open Stripe payment method setup
-    alert('Payment method setup coming soon! This will integrate with Stripe for secure payment processing.');
-    setShowAddPaymentMethod(false);
+    setShowAddPaymentMethod(true);
   };
 
   if (loading) {
@@ -271,6 +270,18 @@ const Billing: React.FC = () => {
         <CreditPurchase
           onClose={() => setShowCreditPurchase(false)}
           onSuccess={handleCreditPurchaseSuccess}
+        />
+      )}
+
+      {/* Payment Method Setup Modal */}
+      {showAddPaymentMethod && (
+        <PaymentMethodSetup
+          onClose={() => setShowAddPaymentMethod(false)}
+          onSuccess={() => {
+            // Refresh billing data to show new payment method
+            fetchBillingData();
+            alert('Payment method saved successfully!');
+          }}
         />
       )}
     </div>
