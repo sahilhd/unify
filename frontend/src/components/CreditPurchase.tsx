@@ -58,26 +58,27 @@ const CreditPurchase: React.FC<CreditPurchaseProps> = ({ onClose, onSuccess }) =
     try {
       const apiKey = localStorage.getItem('unillm_api_key');
       
-      // Use the simpler direct credit addition endpoint for testing
-      const response = await fetch(`${API_BASE_URL}/billing/add-credits`, {
+      // Create payment intent for Stripe processing
+      const response = await fetch(`${API_BASE_URL}/billing/create-payment-intent`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          amount: selectedPackage.credits,
-          payment_method: 'test_payment'
+          credit_amount: selectedPackage.credits
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        onSuccess(selectedPackage.credits, selectedPackage.price_usd);
-        onClose();
+        
+        // Redirect to Stripe Checkout or use Stripe Elements
+        // For now, show that this requires real payment setup
+        setError('Payment processing requires Stripe integration. Please use "Add New Payment Method" first to set up payments.');
       } else {
         const errorData = await response.json();
-        setError(errorData.detail || 'Failed to add credits');
+        setError(errorData.detail || 'Failed to create payment intent');
       }
     } catch (error) {
       console.error('Error processing purchase:', error);

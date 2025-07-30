@@ -848,7 +848,7 @@ async def add_credits(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db=Depends(get_db)
 ):
-    """Add credits to user account (for testing/admin purposes)"""
+    """Add credits to user account (ADMIN ONLY - for testing/support purposes)"""
     token = credentials.credentials
     
     # Get current user
@@ -860,6 +860,13 @@ async def add_credits(
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     
+    # SECURITY: Only allow admin users to add credits manually
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Admin access required. Use proper payment flow for credit purchases."
+        )
+    
     # Add credits to user account (convert float to Decimal)
     current_user.credits += Decimal(str(request.amount))
     
@@ -867,7 +874,7 @@ async def add_credits(
     billing_record = BillingHistory(
         user_id=current_user.id,
         amount=request.amount,
-        description=f"Credit top-up via {request.payment_method}",
+        description=f"Admin credit top-up via {request.payment_method}",
         transaction_type="credit_purchase"
     )
     
@@ -876,7 +883,7 @@ async def add_credits(
     db.refresh(current_user)
     
     return {
-        "message": "Credits added successfully",
+        "message": "Credits added successfully (Admin)",
         "credits_added": request.amount,
         "new_balance": float(current_user.credits)
     }
