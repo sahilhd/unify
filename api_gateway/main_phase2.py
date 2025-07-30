@@ -255,7 +255,7 @@ async def register_user(user_data: UserCreate, db=Depends(get_db)):
             detail="Email already registered"
         )
     
-    # Create new user (initially inactive until email verification)
+    # Create new user (active by default - email verification disabled)
     api_key = generate_api_key()
     hashed_password = get_password_hash(user_data.password)
     
@@ -266,14 +266,17 @@ async def register_user(user_data: UserCreate, db=Depends(get_db)):
         credits=DEFAULT_CREDITS,  # Use config value
         rate_limit_per_minute=RATE_LIMIT_PER_MINUTE,
         daily_quota=DAILY_QUOTA,
-        is_active=False,  # User must verify email before activation
-        email_verified=False
+        is_active=True,  # User is active immediately (no email verification required)
+        email_verified=True  # Skip email verification for now
     )
     
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     
+    # Email verification disabled for now
+    # TODO: Re-enable when email service is properly configured
+    """
     # Send verification email immediately after registration
     try:
         verification_token = create_access_token(
@@ -293,6 +296,7 @@ async def register_user(user_data: UserCreate, db=Depends(get_db)):
         
     except Exception as e:
         logger.error(f"Error sending verification email during registration: {str(e)}")
+    """
     
     return UserResponse(
         id=new_user.id,
@@ -316,12 +320,16 @@ async def login_user(user_data: UserLogin, db=Depends(get_db)):
             detail="Invalid email or password"
         )
     
+    # Email verification check disabled
+    # TODO: Re-enable when email service is properly configured
+    """
     # Check if email is verified
     if not user.email_verified:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Please verify your email address before logging in. Check your inbox for a verification link."
         )
+    """
     
     # Check if account is active
     if not user.is_active:
