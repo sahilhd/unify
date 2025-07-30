@@ -121,18 +121,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.ok) {
         const data = await response.json();
         console.log('Registration response:', data);
-        // Don't automatically log in the user - they need to verify email first
-        // localStorage.setItem('unillm_api_key', data.api_key);
-        // setUser(data);
+        // User is now active immediately (no email verification required)
         return true;
       } else {
         const errorData = await response.json();
         console.error('Registration failed:', errorData);
-        return false;
+        // Throw error with message for better error handling in UI
+        throw new Error(errorData.detail || 'Registration failed');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      return false;
+      throw error; // Re-throw to let UI handle the error
     }
   };
 
