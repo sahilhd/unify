@@ -24,6 +24,7 @@ const Billing: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [autoReload, setAutoReload] = useState(false);
   const [showCreditPurchase, setShowCreditPurchase] = useState(false);
+  const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
 
   useEffect(() => {
     fetchBillingData();
@@ -81,6 +82,12 @@ const Billing: React.FC = () => {
     alert(`Successfully purchased ${creditsAdded} credits for $${amount}!`);
   };
 
+  const handleAddPaymentMethod = () => {
+    // For now, show an alert. In production, this would open Stripe payment method setup
+    alert('Payment method setup coming soon! This will integrate with Stripe for secure payment processing.');
+    setShowAddPaymentMethod(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -129,7 +136,9 @@ const Billing: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
-            <div className="text-3xl font-bold text-white mb-2">{billingData?.credits.toLocaleString()}</div>
+            <div className="text-3xl font-bold text-white mb-2">
+              {billingData?.credits ? billingData.credits.toFixed(4) : '0.0000'}
+            </div>
             <div className="text-gray-400 text-sm">Available Credits</div>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
@@ -159,7 +168,10 @@ const Billing: React.FC = () => {
             </div>
           </div>
           
-          <button className="w-full px-4 py-3 bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white rounded-xl transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50">
+          <button 
+            onClick={handleAddPaymentMethod}
+            className="w-full px-4 py-3 bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white rounded-xl transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50"
+          >
             Add New Payment Method
           </button>
         </div>
